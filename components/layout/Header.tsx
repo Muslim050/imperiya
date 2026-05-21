@@ -10,6 +10,7 @@ import { OpenIndicator } from "@/components/ui/OpenIndicator";
 import { Phone, ChevronRight } from "@/components/ui/icons";
 import { CONTACTS } from "@/data/catalog";
 import { cn } from "@/lib/utils";
+import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 const NAV = [
   { key: "home", to: "/", section: null },
@@ -114,6 +115,12 @@ export function Header() {
 
           <Link
             href="/#calculator"
+            onClick={(e) => {
+              if (isOnHome()) {
+                e.preventDefault();
+                scrollToAnchor("calculator");
+              }
+            }}
             className="group hidden items-center gap-2 bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-all duration-200 hover:bg-orange-d hover:shadow-[0_8px_20px_-8px_rgba(243,147,34,.55)] sm:inline-flex"
           >
             {t("topbar.cta")}
@@ -144,6 +151,12 @@ export function Header() {
               <Link
                 key={item.key}
                 href={item.to}
+                onClick={(e) => {
+                  if (item.section && isOnHome()) {
+                    e.preventDefault();
+                    scrollToAnchor(item.section);
+                  }
+                }}
                 className={cn(
                   "group relative py-2 transition-colors",
                   active ? "text-orange" : "text-ink-2 hover:text-orange",
@@ -174,7 +187,13 @@ export function Header() {
             <Link
               key={item.key}
               href={item.to}
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => {
+                setMobileOpen(false);
+                if (item.section && isOnHome()) {
+                  e.preventDefault();
+                  setTimeout(() => scrollToAnchor(item.section!), 50);
+                }
+              }}
               className="px-2 py-2.5 text-sm font-semibold uppercase tracking-wide text-ink-2 hover:text-orange"
             >
               {t(`nav.${item.key}`)}
@@ -184,7 +203,14 @@ export function Header() {
             <LanguageSwitcher tone="dark" />
             <Link
               href="/#calculator"
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => {
+                setMobileOpen(false);
+                if (isOnHome()) {
+                  e.preventDefault();
+                  // Wait for the mobile drawer's close animation to free space.
+                  setTimeout(() => scrollToAnchor("calculator"), 50);
+                }
+              }}
               className="inline-flex items-center gap-2 bg-orange px-5 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white"
             >
               {t("topbar.cta")}

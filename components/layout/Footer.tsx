@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { OpenIndicator } from "@/components/ui/OpenIndicator";
 import { ChevronRight } from "@/components/ui/icons";
 import { CONTACTS, SOCIALS } from "@/data/catalog";
+import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 const mapUrl = `https://yandex.uz/maps/?text=${encodeURIComponent(CONTACTS.mapQuery)}`;
 
@@ -104,6 +105,12 @@ export function Footer() {
           </div>
           <Link
             href="/#calculator"
+            onClick={(e) => {
+              if (isOnHome()) {
+                e.preventDefault();
+                scrollToAnchor("calculator");
+              }
+            }}
             className="group inline-flex items-center gap-2 bg-orange px-7 py-4 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-all duration-200 hover:bg-orange-d hover:shadow-[0_12px_28px_-10px_rgba(243,147,34,.55)]"
           >
             {t("topbar.cta")}

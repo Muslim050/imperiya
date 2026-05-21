@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 /* USP icons straight from the design markup */
 const UspClock = () => (
@@ -42,6 +43,16 @@ const FEATURES = [
 
 export function Hero() {
   const { t } = useTranslation();
+
+  // Same-page anchor CTAs scroll explicitly so the sticky-header offset is
+  // respected and we don't depend on Next's same-path hash navigation.
+  const onAnchorClick =
+    (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (isOnHome()) {
+        e.preventDefault();
+        scrollToAnchor(id);
+      }
+    };
 
   return (
     <section className="relative overflow-hidden bg-night text-white">
@@ -89,12 +100,14 @@ export function Hero() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/#calculator"
+              onClick={onAnchorClick("calculator")}
               className="inline-flex items-center justify-center bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
             >
               {t("hero.ctaCalc")}
             </Link>
             <Link
               href="/#contacts"
+              onClick={onAnchorClick("contacts")}
               className="inline-flex items-center justify-center border border-white/35 px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10"
             >
               {t("hero.ctaConsult")}

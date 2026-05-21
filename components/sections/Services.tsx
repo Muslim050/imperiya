@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { SERVICES, type ServiceKey } from "@/data/catalog";
+import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 /**
  * Maps each service to a photo under `public/services/{key}.jpg`.
@@ -31,6 +32,18 @@ const BG: Record<ServiceKey, string> = {
 
 export function Services() {
   const { t } = useTranslation();
+
+  // Clicking a service tile or the "Все услуги" CTA expresses interest →
+  // smooth-scroll to the contacts/footer section so the user can call or open
+  // the map. On the home page we do it locally; from any other route we let
+  // Next navigate and ScrollManager handles the rest.
+  const onContactsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isOnHome()) {
+      e.preventDefault();
+      scrollToAnchor("contacts");
+    }
+  };
+
   return (
     <section id="services" className="scroll-mt-40 bg-bg pt-[18px] pb-8">
       <div className="inner">
@@ -42,6 +55,7 @@ export function Services() {
             <Link
               key={s}
               href="/#contacts"
+              onClick={onContactsClick}
               className="group relative block overflow-hidden text-white"
               style={{ aspectRatio: "1 / 0.95" }}
             >
@@ -91,6 +105,7 @@ export function Services() {
         <div className="mt-3.5 flex justify-center">
           <Link
             href="/#contacts"
+            onClick={onContactsClick}
             className="border border-[#DDD] bg-white px-[26px] py-3 text-[12px] font-bold uppercase tracking-[0.1em] transition-colors hover:border-orange hover:text-orange"
           >
             {t("services.all")}
