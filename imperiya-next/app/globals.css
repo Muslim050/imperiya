@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette taken 1:1 from the precise design file */
+  --color-orange: #f39322;
+  --color-orange-d: #e07f12;
+  --color-ink: #0e0e0e;
+  --color-ink-2: #1a1a1a;
+  --color-ink-3: #262626;
+  --color-night: #0b0b0b;
+  --color-bg: #f4f4f4;
+  --color-line: #e6e6e6;
+  --color-line-2: #eeeeee;
+  --color-line-d: rgba(255, 255, 255, 0.08);
+  --color-muted: #7a7a7a;
+  --color-muted-2: #9a9a9a;
+  --color-text: #141414;
+
+  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  ::selection {
+    background: var(--color-orange);
+    color: #fff;
+  }
+}
+
+@layer utilities {
+  .page {
+    @apply flex min-h-screen flex-col;
+  }
+
+  .inner {
+    @apply mx-auto w-full max-w-[1280px] px-5 sm:px-8 lg:px-10;
+  }
+
+  .px-page {
+    @apply px-5 sm:px-8 lg:px-10;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
