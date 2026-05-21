@@ -13,12 +13,10 @@ import { SERVICES, type ServiceKey } from "@/data/catalog";
 const SERVICE_IMG: Record<ServiceKey, string> = {
   facade: "/services/facade.jpg",
   shutters: "/services/shutters.jpg",
-  adjustment: "/services/adjustment.jpg",
+  adjustment: "/services/adjustment.png",
   shower: "/services/shower.jpg",
-  sliding: "/services/sliding.jpg",
-  pergola: "/services/pergola.jpg",
-  gates: "/services/gates.jpg",
-  wpc: "/services/wpc.jpg",
+  sliding: "/services/sliding.jpeg",
+  service: "/services/service.webp",
 };
 
 /* Base tint shown while the photo loads (and if everything fails). */
@@ -28,9 +26,7 @@ const BG: Record<ServiceKey, string> = {
   adjustment: "linear-gradient(180deg,#272727 0%,#0a0a0a 100%)",
   shower: "linear-gradient(180deg,#4b3a32 0%,#16100c 100%)",
   sliding: "linear-gradient(180deg,#3d4a3d 0%,#0e1410 100%)",
-  pergola: "linear-gradient(180deg,#2f3a45 0%,#0b1019 100%)",
-  gates: "linear-gradient(180deg,#3a4654 0%,#11161d 100%)",
-  wpc: "linear-gradient(180deg,#5a4233 0%,#17100a 100%)",
+  service: "linear-gradient(180deg,#2f3a45 0%,#0b1019 100%)",
 };
 
 export function Services() {

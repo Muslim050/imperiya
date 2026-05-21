@@ -118,7 +118,5 @@ export const SERVICE_ICONS = {
   adjustment: Wrench,
   shower: WindowMark,
   sliding: WindowMark,
-  pergola: Factory,
-  gates: WindowMark,
-  wpc: Factory,
+  service: Wrench,
 } as const;

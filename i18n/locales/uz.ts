@@ -134,9 +134,7 @@ const uz: Translation = {
       adjustment: "Sozlash va shisha paketni almashtirish",
       shower: "Dush kabinalari",
       sliding: "Surma eshiklar",
-      pergola: "Terassa uchun pergola",
-      gates: "Avtomatik darvozalar",
-      wpc: "DPK terassa taxtasi",
+      service: "Servis markazi",
     },
   },
   stats: {

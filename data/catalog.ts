@@ -51,9 +51,7 @@ export const SERVICES = [
   "adjustment",
   "shower",
   "sliding",
-  "pergola",
-  "gates",
-  "wpc",
+  "service",
 ] as const;
 export type ServiceKey = (typeof SERVICES)[number];
 
@@ -63,7 +61,7 @@ export const PARTNERS = [
   "Akfa",
   "Fornax",
   "Kale",
-  "Vorne",
+  "Vorne", 
   "Master",
 ] as const;
 
