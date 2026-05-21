@@ -4,7 +4,10 @@ out
 dist
 *.tsbuildinfo
 .DS_Store
+.claude/
 .env
 .env.local
 imperiya.db
 imperiya.db-journal
+media/*
+!media/.gitkeep
