@@ -58,6 +58,8 @@ const en: Translation = {
       single: "Single-sash",
       double: "Double-sash",
       triple: "Triple-sash",
+      "door-single": "Single-leaf",
+      "door-double": "Double-leaf",
     },
     color: "Color",
     colors: {

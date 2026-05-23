@@ -51,4 +51,18 @@ export const FRAME_PICTO: Record<string, React.ReactNode> = {
       <path d="M11 2v18M21 2v18" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
+  "door-single": (
+    <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+      <rect x="2" y="1" width="14" height="20" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12.5" cy="11" r="0.9" fill="currentColor" />
+    </svg>
+  ),
+  "door-double": (
+    <svg width="28" height="22" viewBox="0 0 28 22" fill="none">
+      <rect x="2" y="1" width="24" height="20" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14 1v20" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="11.5" cy="11" r="0.9" fill="currentColor" />
+      <circle cx="16.5" cy="11" r="0.9" fill="currentColor" />
+    </svg>
+  ),
 };

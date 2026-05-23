@@ -56,6 +56,8 @@ const ru = {
       single: "Одностворчатое",
       double: "Двухстворчатое",
       triple: "Трёхстворчатое",
+      "door-single": "Одностворчатая",
+      "door-double": "Двухстворчатая",
     },
     color: "Цвет",
     colors: {

@@ -58,6 +58,8 @@ const uz: Translation = {
       single: "Bir tavaqali",
       double: "Ikki tavaqali",
       triple: "Uch tavaqali",
+      "door-single": "Bir tavaqali",
+      "door-double": "Ikki tavaqali",
     },
     color: "Rang",
     colors: {

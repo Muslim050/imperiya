@@ -19,8 +19,19 @@ export const CONSTRUCTION_TYPES = [
 ] as const;
 export type ConstructionType = (typeof CONSTRUCTION_TYPES)[number];
 
-/** Number of sashes in the frame. */
-export const FRAMES = ["single", "double", "triple"] as const;
+/**
+ * Frame keys are unique across construction types. Window frames count
+ * sashes (single/double/triple); door frames are namespaced because their
+ * artwork, sizes and pricing differ from window frames with the same sash
+ * count.
+ */
+export const FRAMES = [
+  "single",
+  "double",
+  "triple",
+  "door-single",
+  "door-double",
+] as const;
 export type Frame = (typeof FRAMES)[number];
 
 /** Locale-aware name with all three site languages baked in. */
@@ -48,7 +59,22 @@ export const FRAME_SIZE_LIMITS: Record<
   single: { minW: 500, maxW: 1000, minH: 500, maxH: 2200 },
   double: { minW: 500, maxW: 1600, minH: 500, maxH: 2200 },
   triple: { minW: 500, maxW: 2700, minH: 500, maxH: 2200 },
+  "door-single": { minW: 700, maxW: 1200, minH: 1900, maxH: 2400 },
+  "door-double": { minW: 1200, maxW: 2400, minH: 1900, maxH: 2400 },
 };
+
+/**
+ * Frames available per construction type. Types not listed here fall through
+ * to an "individual quote" panel in the UI (no online configuration).
+ */
+export const FRAMES_BY_TYPE: Partial<Record<ConstructionType, Frame[]>> = {
+  window: ["single", "double", "triple"],
+  door: ["door-single", "door-double"],
+};
+
+export function getFramesFor(t: ConstructionType): Frame[] {
+  return FRAMES_BY_TYPE[t] ?? [];
+}
 
 export const VARIANTS: Record<Frame, FrameVariant[]> = {
   single: [
@@ -259,6 +285,41 @@ export const VARIANTS: Record<Frame, FrameVariant[]> = {
       image: "/calculator/tricuspid/image_3_4.svg",
     },
   ],
+  // Door artwork uses the same file for thumbnail and big preview — imzo's
+  // configurator ships only ~300px-tall portraits, which work fine in both
+  // slots.
+  "door-single": [
+    {
+      id: "door-single-1",
+      name: { ru: "Дверь, вариант 1", uz: "Eshik, 1-variant", en: "Door, option 1" },
+      scheme: "/calculator/door/single-1.webp",
+      image: "/calculator/door/single-1.webp",
+    },
+    {
+      id: "door-single-2",
+      name: { ru: "Дверь, вариант 2", uz: "Eshik, 2-variant", en: "Door, option 2" },
+      scheme: "/calculator/door/single-2.webp",
+      image: "/calculator/door/single-2.webp",
+    },
+    {
+      id: "door-single-3",
+      name: { ru: "Дверь, вариант 3", uz: "Eshik, 3-variant", en: "Door, option 3" },
+      scheme: "/calculator/door/single-3.webp",
+      image: "/calculator/door/single-3.webp",
+    },
+  ],
+  "door-double": [
+    {
+      id: "door-double-1",
+      name: {
+        ru: "Двухстворчатая",
+        uz: "Ikki tavaqali",
+        en: "Double-leaf",
+      },
+      scheme: "/calculator/door/double-1.webp",
+      image: "/calculator/door/double-1.webp",
+    },
+  ],
 };
 
 /** Default variant per frame (used when the user switches frame). */
@@ -266,6 +327,8 @@ export const DEFAULT_VARIANT: Record<Frame, string> = {
   single: VARIANTS.single[0].id,
   double: VARIANTS.double[5].id, // Поворотное | Поворотное — most photogenic
   triple: VARIANTS.triple[5].id, // 3-sash turn
+  "door-single": VARIANTS["door-single"][0].id,
+  "door-double": VARIANTS["door-double"][0].id,
 };
 
 export function findVariant(id: string): FrameVariant | undefined {
@@ -330,6 +393,11 @@ const FRAME_FACTOR: Record<Frame, number> = {
   single: 1,
   double: 1.12,
   triple: 1.22,
+  // Door frames are baselined to window-double's labour cost and scale up
+  // for the double-leaf variant. TYPE_FACTOR.door already adds the door
+  // premium, so we keep the frame multiplier modest here.
+  "door-single": 1,
+  "door-double": 1.18,
 };
 
 const MOSQUITO_PRICE = 180_000;

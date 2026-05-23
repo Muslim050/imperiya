@@ -8,18 +8,18 @@ import { TYPE_SVG, FRAME_PICTO } from "./shapes";
 import { PROFILE_SERIES } from "@/data/catalog";
 import {
   CONSTRUCTION_TYPES,
-  FRAMES,
   VARIANTS,
   DEFAULT_VARIANT,
   FRAME_SIZE_LIMITS,
+  getFramesFor,
   findVariant,
-  frameOfVariant,
   COLORS,
   SERIES_OPTIONS,
   GLASS_OPTIONS,
   initialCalcState,
   estimatePrice,
   type CalcState,
+  type ConstructionType,
   type Frame,
 } from "@/data/calculator";
 
@@ -48,11 +48,23 @@ export function Calculator() {
   const setFrame = (f: Frame) =>
     setState((s) => ({ ...s, frame: f, variantId: DEFAULT_VARIANT[f] }));
 
+  /** Switch construction type and jump to a default frame/variant for that
+   * type so the picker and preview never end up in an inconsistent state
+   * (e.g. type=door but frame=triple-sash-window). */
+  const setType = (tp: ConstructionType) =>
+    setState((s) => {
+      const framesForType = getFramesFor(tp);
+      if (framesForType.length === 0) return { ...s, type: tp };
+      const f = framesForType[0];
+      return { ...s, type: tp, frame: f, variantId: DEFAULT_VARIANT[f] };
+    });
+
   const variant = findVariant(state.variantId) ?? VARIANTS.double[0];
   const variantName = variant.name[lang] ?? variant.name.ru;
-  /** Only window has photorealistic variants downloaded. Other construction
-   * types fall back to an "individual quote" preview / panel. */
-  const isWindow = state.type === "window";
+  /** Frames available for the current construction type. Empty list means
+   * the type is handled via the "individual quote" fallback. */
+  const availableFrames = getFramesFor(state.type);
+  const hasFrames = availableFrames.length > 0;
   const isLast = step === STEPS.length - 1;
 
   function advance() {
@@ -137,7 +149,7 @@ export function Calculator() {
                         <button
                           key={tp}
                           type="button"
-                          onClick={() => set("type", tp)}
+                          onClick={() => setType(tp)}
                           className={cn(
                             "flex items-center gap-2.5 border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors",
                             on
@@ -164,7 +176,7 @@ export function Calculator() {
                     don't have configurator artwork yet and are quoted
                     individually). */}
                 <div>
-                  {!isWindow && (
+                  {!hasFrames && (
                     <div className="mb-5 flex items-start gap-3 border border-[#F3D89F] bg-[#FFF8EC] p-3.5">
                       <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-white text-orange [&>svg]:size-[18px]">
                         {TYPE_SVG[state.type]}
@@ -178,12 +190,12 @@ export function Calculator() {
                     </div>
                   )}
 
-                  {isWindow && (
+                  {hasFrames && (
                     <>
                       {/* Frame chips */}
                       <div className={PTITLE}>{t("calc.frame")}</div>
                       <div className="mb-5 flex flex-wrap gap-2">
-                        {FRAMES.map((f) => {
+                        {availableFrames.map((f) => {
                           const on = state.frame === f;
                           return (
                             <button
@@ -496,7 +508,7 @@ export function Calculator() {
 
           {/* RIGHT PREVIEW */}
           <div className="border border-[#ECECEC] bg-white px-[22px] py-7">
-            {isWindow ? (
+            {hasFrames ? (
               <>
                 <WindowPreview
                   imageSrc={variant.image}
@@ -599,6 +611,3 @@ export function Calculator() {
   );
 }
 
-// Helper: surface frameOfVariant import so tree-shaking doesn't drop it
-// (used elsewhere if the state ever has to be hydrated from URL params).
-void frameOfVariant;
