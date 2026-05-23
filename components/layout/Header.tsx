@@ -15,8 +15,8 @@ import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 const NAV = [
   { key: "home", to: "/", section: null },
   { key: "profiles", to: "/#profiles", section: "profiles" },
-  { key: "glass", to: "/#glass", section: "glass" },
   { key: "facade", to: "/#facade", section: "facade" },
+    { key: "glass", to: "/#glass", section: "glass" },
   { key: "services", to: "/#services", section: "services" },
   { key: "about", to: "/#about", section: "about" },
   { key: "contacts", to: "/#contacts", section: "contacts" },

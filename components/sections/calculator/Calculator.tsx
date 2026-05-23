@@ -89,37 +89,40 @@ export function Calculator() {
           {t("calc.subtitle")}
         </div>
 
-        {/* Stepper */}
-        <div className="mb-6 flex flex-wrap gap-x-[42px] gap-y-3 border-b border-[#E4E4E4] pb-[18px]">
-          {STEPS.map((s, i) => {
-            const active = i === step;
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => !submitted && setStep(i)}
-                className={cn(
-                  "flex items-center gap-2.5 text-[13px] font-semibold",
-                  active ? "text-[#111]" : "text-[#9a9a9a]",
-                )}
-              >
-                <span
+        {/* Stepper — scrolls horizontally on narrow screens so the labels
+            don't wrap to multiple lines with mismatched alignment. */}
+        <div className="mb-6 -mx-5 overflow-x-auto border-b border-[#E4E4E4] pb-[18px] [scrollbar-width:none] sm:mx-0 [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-x-5 px-5 sm:gap-x-[42px] sm:w-auto sm:px-0">
+            {STEPS.map((s, i) => {
+              const active = i === step;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => !submitted && setStep(i)}
                   className={cn(
-                    "grid size-[22px] place-items-center rounded-full text-[12px] font-bold text-white",
-                    active ? "bg-orange" : "bg-[#DCDCDC]",
+                    "flex shrink-0 items-center gap-2.5 text-[12px] font-semibold sm:text-[13px]",
+                    active ? "text-[#111]" : "text-[#9a9a9a]",
                   )}
                 >
-                  {i + 1}
-                </span>
-                {t(`calc.steps.${s}`)}
-              </button>
-            );
-          })}
+                  <span
+                    className={cn(
+                      "grid size-[22px] shrink-0 place-items-center rounded-full text-[12px] font-bold text-white",
+                      active ? "bg-orange" : "bg-[#DCDCDC]",
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  {t(`calc.steps.${s}`)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
           {/* LEFT PANEL */}
-          <div className="border border-[#ECECEC] bg-white p-[22px]">
+          <div className="border border-[#ECECEC] bg-white p-4 sm:p-[22px]">
             {submitted ? (
               <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
                 <span className="grid size-14 place-items-center rounded-full bg-[#FFF6EB] text-orange">
@@ -222,7 +225,7 @@ export function Calculator() {
 
                       {/* Variant scheme grid */}
                       <div className={PTITLE}>{t("calc.opening")}</div>
-                      <div className="mb-5 grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-5">
+                      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         {VARIANTS[state.frame].map((v) => {
                       const on = state.variantId === v.id;
                       return (
@@ -507,7 +510,7 @@ export function Calculator() {
           </div>
 
           {/* RIGHT PREVIEW */}
-          <div className="border border-[#ECECEC] bg-white px-[22px] py-7">
+          <div className="mx-auto w-full max-w-[420px] border border-[#ECECEC] bg-white px-4 py-5 sm:px-[22px] sm:py-7 lg:mx-0 lg:max-w-none">
             {hasFrames ? (
               <>
                 <WindowPreview
@@ -515,6 +518,10 @@ export function Calculator() {
                   width={state.width}
                   height={state.height}
                   alt={variantName}
+                  /* Door artwork is portrait (~1:2.5) — keep it compact so
+                   * the panel feels balanced instead of being dominated by
+                   * a single tall image. */
+                  narrow={state.frame.startsWith("door-")}
                 />
 
                 <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
