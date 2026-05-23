@@ -45,6 +45,8 @@ const en: Translation = {
     constructionType: "Construction type",
     frame: "Sash count",
     opening: "Opening type",
+    individualNote:
+      "We quote this construction type individually. Enter the dimensions and leave your contacts — a manager will reach out with the exact price.",
     types: {
       window: "Window",
       door: "Door",

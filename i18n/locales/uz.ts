@@ -45,6 +45,8 @@ const uz: Translation = {
     constructionType: "Konstruksiya turi",
     frame: "Tavaqalar soni",
     opening: "Ochilish turi",
+    individualNote:
+      "Bu konstruksiyani individual hisoblaymiz. O‘lchamlarni kiriting va kontakt qoldiring — menejer aniq narxni yuboradi.",
     types: {
       window: "Oyna",
       door: "Eshik",

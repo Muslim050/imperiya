@@ -50,6 +50,9 @@ export function Calculator() {
 
   const variant = findVariant(state.variantId) ?? VARIANTS.double[0];
   const variantName = variant.name[lang] ?? variant.name.ru;
+  /** Only window has photorealistic variants downloaded. Other construction
+   * types fall back to an "individual quote" preview / panel. */
+  const isWindow = state.type === "window";
   const isLast = step === STEPS.length - 1;
 
   function advance() {
@@ -142,7 +145,12 @@ export function Calculator() {
                               : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
                           )}
                         >
-                          <span className={on ? "text-orange" : "text-[#555]"}>
+                          <span
+                            className={cn(
+                              "[&>svg]:size-[18px]",
+                              on ? "text-orange" : "text-[#555]",
+                            )}
+                          >
                             {TYPE_SVG[tp]}
                           </span>
                           {t(`calc.types.${tp}`)}
@@ -152,38 +160,58 @@ export function Calculator() {
                   </div>
                 </div>
 
-                {/* Frame + variant picker */}
+                {/* Frame + variant picker (window only — other types
+                    don't have configurator artwork yet and are quoted
+                    individually). */}
                 <div>
-                  {/* Frame chips */}
-                  <div className={PTITLE}>{t("calc.frame")}</div>
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {FRAMES.map((f) => {
-                      const on = state.frame === f;
-                      return (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => setFrame(f)}
-                          className={cn(
-                            "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
-                            on
-                              ? "border-orange bg-[#FFF6EB] text-[#111]"
-                              : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
-                          )}
-                        >
-                          <span className={on ? "text-orange" : "text-[#666]"}>
-                            {FRAME_PICTO[f]}
-                          </span>
-                          {t(`calc.frames.${f}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {!isWindow && (
+                    <div className="mb-5 flex items-start gap-3 border border-[#F3D89F] bg-[#FFF8EC] p-3.5">
+                      <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-white text-orange [&>svg]:size-[18px]">
+                        {TYPE_SVG[state.type]}
+                      </span>
+                      <div className="text-[13px] leading-[1.45] text-[#5a4628]">
+                        <b className="block text-[#111]">
+                          {t(`calc.types.${state.type}`)}
+                        </b>
+                        {t("calc.individualNote")}
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Variant scheme grid */}
-                  <div className={PTITLE}>{t("calc.opening")}</div>
-                  <div className="mb-5 grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-5">
-                    {VARIANTS[state.frame].map((v) => {
+                  {isWindow && (
+                    <>
+                      {/* Frame chips */}
+                      <div className={PTITLE}>{t("calc.frame")}</div>
+                      <div className="mb-5 flex flex-wrap gap-2">
+                        {FRAMES.map((f) => {
+                          const on = state.frame === f;
+                          return (
+                            <button
+                              key={f}
+                              type="button"
+                              onClick={() => setFrame(f)}
+                              className={cn(
+                                "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
+                                on
+                                  ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                  : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
+                              )}
+                            >
+                              <span
+                                className={on ? "text-orange" : "text-[#666]"}
+                              >
+                                {FRAME_PICTO[f]}
+                              </span>
+                              {t(`calc.frames.${f}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Variant scheme grid */}
+                      <div className={PTITLE}>{t("calc.opening")}</div>
+                      <div className="mb-5 grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-5">
+                        {VARIANTS[state.frame].map((v) => {
                       const on = state.variantId === v.id;
                       return (
                         <button
@@ -214,7 +242,9 @@ export function Calculator() {
                         </button>
                       );
                     })}
-                  </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Color + series + glass */}
                   <div className="grid gap-[18px] sm:grid-cols-[1.1fr_1fr_1fr]">
@@ -466,16 +496,31 @@ export function Calculator() {
 
           {/* RIGHT PREVIEW */}
           <div className="border border-[#ECECEC] bg-white px-[22px] py-7">
-            <WindowPreview
-              imageSrc={variant.image}
-              width={state.width}
-              height={state.height}
-              alt={variantName}
-            />
+            {isWindow ? (
+              <>
+                <WindowPreview
+                  imageSrc={variant.image}
+                  width={state.width}
+                  height={state.height}
+                  alt={variantName}
+                />
 
-            <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
-              {variantName}
-            </div>
+                <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
+                  {variantName}
+                </div>
+              </>
+            ) : (
+              <div className="mx-[18px] mt-[18px] mb-3.5">
+                <div className="grid aspect-square place-items-center bg-[linear-gradient(180deg,#eef3f6,#dde6ec)] text-[#9aabb6] [&>span>svg]:size-24">
+                  <span className="text-[#7a8d99]">
+                    {TYPE_SVG[state.type]}
+                  </span>
+                </div>
+                <div className="mt-3 text-center text-[12px] font-semibold text-[#555]">
+                  {t(`calc.types.${state.type}`)}
+                </div>
+              </div>
+            )}
 
             <div className={cn(PTITLE, "mt-[18px]")}>
               {t("calc.additional")}
