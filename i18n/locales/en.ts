@@ -137,7 +137,6 @@ const en: Translation = {
       adjustment: "Adjustment & glass unit replacement",
       shower: "Shower cabins",
       sliding: "Sliding doors",
-      service: "Service center",
       pergola: "Terrace pergola",
       gates: "Automatic gates",
       wpc: "WPC decking board",

@@ -10,7 +10,6 @@ path from `SERVICE_IMG` in `components/sections/Services.tsx`.
 | Регулировка и замена стеклопакетов        | `adjustment.png`    |
 | Душевые кабинки                           | `shower.jpg`        |
 | Раздвижные двери                          | `sliding.jpeg`      |
-| Сервис центр                              | `service.webp`      |
 | Пергола для террасы                       | `pergola.jpg`       |
 | Автоматические ворота                     | `gates.jpg`         |
 | ДПК террасная доска                       | `wpc.jpg`           |

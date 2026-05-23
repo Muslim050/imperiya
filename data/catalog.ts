@@ -51,7 +51,6 @@ export const SERVICES = [
   "adjustment",
   "shower",
   "sliding",
-  "service",
   "pergola",
   "gates",
   "wpc",
