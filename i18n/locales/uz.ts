@@ -43,7 +43,8 @@ const uz: Translation = {
       contacts: "Kontaktlar",
     },
     constructionType: "Konstruksiya turi",
-    shape: "Shakl / konstruksiya",
+    frame: "Tavaqalar soni",
+    opening: "Ochilish turi",
     types: {
       window: "Oyna",
       door: "Eshik",
@@ -51,12 +52,10 @@ const uz: Translation = {
       balcony: "Balkon bloki",
       facade: "Fasad tizimi",
     },
-    shapes: {
+    frames: {
       single: "Bir tavaqali",
       double: "Ikki tavaqali",
       triple: "Uch tavaqali",
-      panoramic: "Panoramali",
-      balcony: "Balkonli",
     },
     color: "Rang",
     colors: {

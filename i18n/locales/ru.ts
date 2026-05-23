@@ -41,7 +41,8 @@ const ru = {
       contacts: "Контакты",
     },
     constructionType: "Тип конструкции",
-    shape: "Форма / конструкция",
+    frame: "Створчатость",
+    opening: "Тип открывания",
     types: {
       window: "Окно",
       door: "Дверь",
@@ -49,12 +50,10 @@ const ru = {
       balcony: "Балконный блок",
       facade: "Фасадная система",
     },
-    shapes: {
+    frames: {
       single: "Одностворчатое",
       double: "Двухстворчатое",
       triple: "Трёхстворчатое",
-      panoramic: "Панорамное",
-      balcony: "Балконное",
     },
     color: "Цвет",
     colors: {

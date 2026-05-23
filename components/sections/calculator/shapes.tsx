@@ -1,43 +1,4 @@
-/* Shape thumbnails reproduced from the precise design file */
-import type { Shape } from "@/data/calculator";
-
-export const SHAPE_SVG: Record<Shape, React.ReactNode> = {
-  single: (
-    <svg width="58" height="48" viewBox="0 0 58 48" fill="none">
-      <rect x="3" y="3" width="52" height="42" stroke="#222" strokeWidth="2" />
-      <path d="M29 3v42" stroke="#222" strokeWidth="1.4" strokeDasharray="3 3" />
-      <path d="M3 24h52" stroke="#bbb" strokeWidth="1" />
-    </svg>
-  ),
-  double: (
-    <svg width="58" height="48" viewBox="0 0 58 48" fill="none">
-      <rect x="3" y="3" width="52" height="42" stroke="#222" strokeWidth="2" />
-      <path d="M29 3v42" stroke="#222" strokeWidth="2" />
-      <path d="M5 5l24 19M53 5L29 24" stroke="#222" strokeWidth="1.2" />
-    </svg>
-  ),
-  triple: (
-    <svg width="58" height="48" viewBox="0 0 58 48" fill="none">
-      <rect x="3" y="3" width="52" height="42" stroke="#222" strokeWidth="2" />
-      <path d="M21 3v42M37 3v42" stroke="#222" strokeWidth="2" />
-      <path d="M5 5l16 19M53 5L37 24" stroke="#222" strokeWidth="1.2" />
-    </svg>
-  ),
-  panoramic: (
-    <svg width="68" height="48" viewBox="0 0 68 48" fill="none">
-      <rect x="3" y="3" width="62" height="42" stroke="#222" strokeWidth="2" />
-      <path d="M19 3v42M34 3v42M49 3v42" stroke="#222" strokeWidth="1.4" />
-    </svg>
-  ),
-  balcony: (
-    <svg width="58" height="48" viewBox="0 0 58 48" fill="none">
-      <rect x="3" y="3" width="22" height="42" stroke="#222" strokeWidth="2" />
-      <rect x="25" y="3" width="30" height="42" stroke="#222" strokeWidth="2" />
-      <path d="M14 5l11 18M5 5l9 18" stroke="#222" strokeWidth="1.2" />
-    </svg>
-  ),
-};
-
+/* Construction-type icons (window/door/etc.) used in the left column. */
 export const TYPE_SVG: Record<string, React.ReactNode> = {
   window: (
     <svg className="size-[18px]" viewBox="0 0 24 24" fill="none">
@@ -67,6 +28,27 @@ export const TYPE_SVG: Record<string, React.ReactNode> = {
     <svg className="size-[18px]" viewBox="0 0 24 24" fill="none">
       <rect x="2" y="3" width="20" height="18" stroke="currentColor" strokeWidth="1.6" />
       <path d="M8 3v18M16 3v18M2 12h20" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  ),
+};
+
+/* Tiny pictogram for the frame picker chips. */
+export const FRAME_PICTO: Record<string, React.ReactNode> = {
+  single: (
+    <svg width="28" height="22" viewBox="0 0 28 22" fill="none">
+      <rect x="2" y="2" width="24" height="18" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  ),
+  double: (
+    <svg width="28" height="22" viewBox="0 0 28 22" fill="none">
+      <rect x="2" y="2" width="24" height="18" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14 2v18" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  ),
+  triple: (
+    <svg width="32" height="22" viewBox="0 0 32 22" fill="none">
+      <rect x="2" y="2" width="28" height="18" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M11 2v18M21 2v18" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
 };

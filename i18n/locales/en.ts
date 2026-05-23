@@ -43,7 +43,8 @@ const en: Translation = {
       contacts: "Contacts",
     },
     constructionType: "Construction type",
-    shape: "Shape / structure",
+    frame: "Sash count",
+    opening: "Opening type",
     types: {
       window: "Window",
       door: "Door",
@@ -51,12 +52,10 @@ const en: Translation = {
       balcony: "Balcony block",
       facade: "Facade system",
     },
-    shapes: {
+    frames: {
       single: "Single-sash",
       double: "Double-sash",
       triple: "Triple-sash",
-      panoramic: "Panoramic",
-      balcony: "Balcony",
     },
     color: "Color",
     colors: {
