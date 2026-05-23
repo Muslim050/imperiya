@@ -123,11 +123,6 @@ export function Header() {
             <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
 
-          {/* Language switcher anchored to the far right per request. */}
-          <div className="hidden sm:block">
-            <LanguageSwitcher tone="dark" />
-          </div>
-
           <button
             type="button"
             aria-label="Menu"
@@ -143,9 +138,14 @@ export function Header() {
         </div>
       </div>
 
-      {/* Bordered centered nav with animated underline accent */}
+      {/* Bordered second-row: centered nav with the language switcher
+          pinned to the right edge. Equal-width flex spacers on either
+          side of the nav keep it perfectly centred regardless of the
+          switcher's width. */}
       <div className="inner mt-3">
-        <nav className="hidden justify-center gap-[38px] border-t border-line-2 pt-3.5 pb-3.5 text-[13px] font-semibold uppercase tracking-[0.02em] lg:flex">
+        <div className="hidden items-center border-t border-line-2 pt-3.5 pb-3.5 lg:flex">
+          <div className="flex-1" />
+          <nav className="flex gap-[38px] text-[13px] font-semibold uppercase tracking-[0.02em]">
           {NAV.map((item) => {
             const active = isActive(item);
             return (
@@ -173,7 +173,11 @@ export function Header() {
               </Link>
             );
           })}
-        </nav>
+          </nav>
+          <div className="flex flex-1 justify-end">
+            <LanguageSwitcher tone="dark" />
+          </div>
+        </div>
       </div>
 
       {/* Mobile menu */}
