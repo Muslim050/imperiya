@@ -140,6 +140,12 @@ const uz: Translation = {
       service: "Servis markazi",
     },
   },
+  about: {
+    title: "Kompaniya haqida",
+    text: "Imperiya — to‘liq tsiklli ishlab chiqarish kompaniyasi. 2010-yildan beri PVX oynalar, alyumin konstruksiyalar va fasad tizimlarini o‘z liniyalarimizda yig‘amiz. Toshkent va viloyatlarda mijozlar bilan vositachisiz to‘g‘ridan-to‘g‘ri ishlaymiz.",
+    more: "Batafsil",
+    photoFallback: "Ishlab chiqarish fotosurati keyinroq qo‘shiladi",
+  },
   stats: {
     title: "Imperiya raqamlarda",
     area: "m² ishlab chiqarish maydoni",

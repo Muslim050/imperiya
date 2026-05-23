@@ -140,6 +140,12 @@ const en: Translation = {
       service: "Service center",
     },
   },
+  about: {
+    title: "About the company",
+    text: "Imperiya is a full-cycle manufacturer. We have been assembling PVC windows, aluminium structures and façade systems on our own lines since 2010 — working directly with clients in Tashkent and across Uzbekistan, with no middlemen in between.",
+    more: "Learn more",
+    photoFallback: "Production photo coming soon",
+  },
   stats: {
     title: "Imperiya in numbers",
     area: "m² of production area",
