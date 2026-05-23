@@ -69,16 +69,14 @@ export function Hero() {
           </p>
 
           <div className="mb-[26px] flex items-center gap-[22px]">
-            <span className="inline-flex items-center bg-white px-3 py-1.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/brands/engelberg.png"
-                alt="Engelberg"
-                loading="lazy"
-                decoding="async"
-                className="h-7 w-auto object-contain"
-              />
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brands/engelberg.png"
+              alt="Engelberg"
+              loading="lazy"
+              decoding="async"
+              className="h-9 w-auto object-contain"
+            />
             {/* THERMO — wordmark only, no icon per the TZ */}
             <span className="text-[13px] font-bold tracking-[0.04em]">
               THERMO
