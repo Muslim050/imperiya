@@ -11,13 +11,24 @@ const stroke = {
 };
 
 /** Open-window line icon — the new logo mark requested in the TZ. */
+/**
+ * "Open window" line icon used by the Imperiya logo — square frame with
+ * 4 panes and one sash swung open at perspective. Echoes the standard
+ * line-icon idiom for an opening window (cf. the Shutterstock reference
+ * shared by the client).
+ */
 export function WindowMark(props: IconProps) {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden {...props}>
-      <rect x="5" y="4" width="22" height="24" rx="1.5" {...stroke} />
-      <line x1="16" y1="4" x2="16" y2="28" {...stroke} />
-      <line x1="5" y1="16" x2="27" y2="16" {...stroke} />
-      <path d="M27 7l4 2.4v13.2L27 25" {...stroke} />
+    <svg viewBox="0 0 32 32" aria-hidden fill="none" {...props}>
+      {/* Closed frame (4 panes) */}
+      <rect x="4" y="4" width="20" height="24" rx="0.5" {...stroke} />
+      <line x1="14" y1="4" x2="14" y2="28" {...stroke} />
+      <line x1="4" y1="16" x2="24" y2="16" {...stroke} />
+      {/* Right sash, opened outward — narrower trapezoid suggests perspective */}
+      <path d="M24 6l5 2v16l-5 2V6Z" {...stroke} strokeLinejoin="round" />
+      <line x1="24" y1="16" x2="29" y2="16" {...stroke} />
+      {/* Handle dot */}
+      <circle cx="22" cy="16" r="0.9" fill="currentColor" />
     </svg>
   );
 }

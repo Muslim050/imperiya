@@ -92,10 +92,6 @@ export function Header() {
         <Logo tone="dark" className="transition-transform duration-200 hover:scale-[1.02]" />
 
         <div className="flex items-center gap-5 sm:gap-7">
-          <div className="hidden sm:block">
-            <LanguageSwitcher tone="dark" />
-          </div>
-
           <a
             href={CONTACTS.phoneHref}
             className="hidden flex-col items-end leading-[1.1] md:flex"
@@ -126,6 +122,11 @@ export function Header() {
             {t("topbar.cta")}
             <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
+
+          {/* Language switcher anchored to the far right per request. */}
+          <div className="hidden sm:block">
+            <LanguageSwitcher tone="dark" />
+          </div>
 
           <button
             type="button"

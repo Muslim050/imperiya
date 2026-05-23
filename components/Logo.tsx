@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { WindowMark } from "@/components/ui/icons";
 
 /**
- * Logo per the TZ: open-window line icon, name "Imperiya",
- * subtitle "проверенный партнёр" + Akfa. Visual layout matches the
- * precise design's 3-line brand-text block.
+ * Brand logo: open-window line icon + "Imperiya" wordmark + a small
+ * "проверенный партнёр akfa" badge using the real Akfa partner mark
+ * loaded from public/partners/akfa.png. Used in the header and the footer.
  */
 export function Logo({
   className,
@@ -29,14 +29,14 @@ export function Logo({
       className={cn("flex items-center gap-3", className)}
     >
       <span
-        className="grid size-[46px] shrink-0 place-items-center border text-white"
-        style={{
-          borderColor: "#D7B98A",
-          background:
-            "linear-gradient(180deg,#E9D2A6 0%,#C49A55 60%,#8D6A2E 100%)",
-        }}
+        className={cn(
+          "grid size-[46px] shrink-0 place-items-center border",
+          light
+            ? "border-white/30 text-white"
+            : "border-[#1a1a1a] text-ink-2",
+        )}
       >
-        <WindowMark className="size-7 text-white/95" />
+        <WindowMark className="size-7" />
       </span>
       <span className="leading-none">
         <span
@@ -58,14 +58,19 @@ export function Logo({
         {!compact && (
           <span
             className={cn(
-              "mt-[5px] flex items-center gap-1.5 text-[10px]",
-              light ? "text-white/55" : "text-[#666]",
+              "mt-1 flex items-center gap-1.5 text-[10px]",
+              light ? "text-white/65" : "text-[#666]",
             )}
           >
             {t("brand.partner")}
-            <b className="text-[12px] font-extrabold tracking-[0.05em] text-orange-d">
-              akfa
-            </b>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/partners/akfa.png"
+              alt="Akfa"
+              loading="lazy"
+              decoding="async"
+              className="h-[20px] w-auto object-contain"
+            />
           </span>
         )}
       </span>
