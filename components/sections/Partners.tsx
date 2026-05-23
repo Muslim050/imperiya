@@ -5,14 +5,13 @@ import { useTranslation } from "react-i18next";
 import { PARTNERS, type Partner } from "@/data/catalog";
 
 /**
- * One partner card — renders the real logo from public/partners/. If the
- * file is missing (or fails to load) the card gracefully falls back to a
- * wordmark so the grid never shows a broken image.
+ * One partner card — real logo with a wordmark fallback if the file is
+ * missing. Card width is fixed so the marquee track length is predictable.
  */
 function PartnerCard({ partner }: { partner: Partner }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="grid h-[88px] place-items-center border border-[#ECECEC] bg-white px-4">
+    <div className="grid h-[88px] w-[180px] shrink-0 place-items-center border border-[#ECECEC] bg-white px-4">
       {failed ? (
         <span className="text-[17px] font-extrabold uppercase tracking-tight text-[#555]">
           {partner.name}
@@ -32,19 +31,40 @@ function PartnerCard({ partner }: { partner: Partner }) {
   );
 }
 
-/** Partners block per the TZ. Real logos under public/partners/. */
+/**
+ * Partners block per the TZ — endless marquee carousel. The track holds
+ * two copies of the list so the -50% translation loops without a visible
+ * jump. Hovering pauses the animation; edge mask softens the entry/exit.
+ */
 export function Partners() {
   const { t } = useTranslation();
+  // Duplicate the list to make the loop seamless under translateX(-50%).
+  const loop = [...PARTNERS, ...PARTNERS];
+
   return (
     <section className="scroll-mt-40 bg-bg py-9">
       <div className="inner">
         <h2 className="m-0 mb-[18px] text-lg font-extrabold uppercase tracking-[0.06em]">
           {t("partners.title")}
         </h2>
-        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4 lg:grid-cols-7">
-          {PARTNERS.map((p) => (
-            <PartnerCard key={p.slug} partner={p} />
-          ))}
+
+        <div
+          className="group relative overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0, black 48px, black calc(100% - 48px), transparent 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0, black 48px, black calc(100% - 48px), transparent 100%)",
+          }}
+        >
+          <div
+            className="flex w-max gap-3.5 animate-[marquee_32s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none"
+            aria-hidden={false}
+          >
+            {loop.map((p, i) => (
+              <PartnerCard key={`${p.slug}-${i}`} partner={p} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

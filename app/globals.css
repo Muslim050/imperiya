@@ -20,6 +20,17 @@
     sans-serif;
 }
 
+/* Endless horizontal carousel used by the Partners section. The track
+ * renders the list twice and translates by -50% so the loop is seamless. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
