@@ -1,15 +1,32 @@
 /**
- * Calculator model — replicates the visual UX of the imzo.uz configurator
- * referenced in the TZ. We keep our 5-step flow (type / sizes / params /
- * extras / contacts) but the picker on step 1 now operates on real
- * one/two/three-sash frames with opening-direction variants, each backed by
- * a photorealistic SVG preview under public/calculator/.
+ * Calculator data model — clones imzo.uz/calculator/ in structure
+ * (product → material type → series with its own lamination + fittings,
+ * variants by sash count, components with own sizes) but keeps our
+ * client's explicit ask: **plain number inputs for dimensions instead of
+ * the unclear sliders** imzo uses.
  *
- * Pricing here is an indicative estimate only; the TZ states the final
- * price is confirmed after an on-site measurement.
+ * Pricing is indicative; final quote comes after on-site measurement.
+ * SVG window/door artwork and color swatches are pulled from imzo's
+ * /uploads/configurator/ and /uploads/colors/ trees.
  */
 import { PROFILE_SERIES } from "./catalog";
 
+/* -------------------------------------------------------------- localized */
+export interface TripleLang {
+  ru: string;
+  uz: string;
+  en: string;
+}
+
+/* ---------------------------------------------- product / construction */
+export const PRODUCTS = ["window", "door"] as const;
+export type Product = (typeof PRODUCTS)[number];
+
+export const MATERIAL_TYPES = ["pvc", "aluminum"] as const;
+export type MaterialType = (typeof MATERIAL_TYPES)[number];
+
+/** Kept for back-compat with the old TYPE_FACTOR pricing — door+window only
+ * are real configurable products; the others fall through to "individual". */
 export const CONSTRUCTION_TYPES = [
   "window",
   "door",
@@ -19,12 +36,7 @@ export const CONSTRUCTION_TYPES = [
 ] as const;
 export type ConstructionType = (typeof CONSTRUCTION_TYPES)[number];
 
-/**
- * Frame keys are unique across construction types. Window frames count
- * sashes (single/double/triple); door frames are namespaced because their
- * artwork, sizes and pricing differ from window frames with the same sash
- * count.
- */
+/* ------------------------------------------------------------ frames */
 export const FRAMES = [
   "single",
   "double",
@@ -34,24 +46,13 @@ export const FRAMES = [
 ] as const;
 export type Frame = (typeof FRAMES)[number];
 
-/** Locale-aware name with all three site languages baked in. */
-export interface TripleLang {
-  ru: string;
-  uz: string;
-  en: string;
-}
-
 export interface FrameVariant {
-  /** Stable variant id used in CalcState. Format: `<frame>-<n>`. */
   id: string;
   name: TripleLang;
-  /** Small thumbnail (92×120) shown in the picker grid. */
   scheme: string;
-  /** Big preview (260×260) shown in the right-hand panel. */
   image: string;
 }
 
-/** Allowed size ranges per frame, in millimetres. */
 export const FRAME_SIZE_LIMITS: Record<
   Frame,
   { minW: number; maxW: number; minH: number; maxH: number }
@@ -63,18 +64,10 @@ export const FRAME_SIZE_LIMITS: Record<
   "door-double": { minW: 1200, maxW: 2400, minH: 1900, maxH: 2400 },
 };
 
-/**
- * Frames available per construction type. Types not listed here fall through
- * to an "individual quote" panel in the UI (no online configuration).
- */
-export const FRAMES_BY_TYPE: Partial<Record<ConstructionType, Frame[]>> = {
+export const FRAMES_BY_PRODUCT: Record<Product, Frame[]> = {
   window: ["single", "double", "triple"],
   door: ["door-single", "door-double"],
 };
-
-export function getFramesFor(t: ConstructionType): Frame[] {
-  return FRAMES_BY_TYPE[t] ?? [];
-}
 
 export const VARIANTS: Record<Frame, FrameVariant[]> = {
   single: [
@@ -126,207 +119,39 @@ export const VARIANTS: Record<Frame, FrameVariant[]> = {
     },
   ],
   double: [
-    {
-      id: "double-blind-blind",
-      name: { ru: "Глухое | Глухое", uz: "Karra | Karra", en: "Fixed | Fixed" },
-      scheme: "/calculator/double/scheme_2_1.svg",
-      image: "/calculator/double/image_2_1.svg",
-    },
-    {
-      id: "double-turn-blind",
-      name: {
-        ru: "Поворотное | Глухое",
-        uz: "Burama | Karra",
-        en: "Turn | Fixed",
-      },
-      scheme: "/calculator/double/scheme_2_2.svg",
-      image: "/calculator/double/image_2_2.svg",
-    },
-    {
-      id: "double-tiltturn-blind",
-      name: {
-        ru: "Поворотно-откидное | Глухое",
-        uz: "Burama-egmali | Karra",
-        en: "Tilt-turn | Fixed",
-      },
-      scheme: "/calculator/double/scheme_2_2_1.svg",
-      image: "/calculator/double/image_2_2.svg",
-    },
-    {
-      id: "double-blind-turn",
-      name: {
-        ru: "Глухое | Поворотное",
-        uz: "Karra | Burama",
-        en: "Fixed | Turn",
-      },
-      scheme: "/calculator/double/scheme_2_3.svg",
-      image: "/calculator/double/image_2_3.svg",
-    },
-    {
-      id: "double-blind-tiltturn",
-      name: {
-        ru: "Глухое | Поворотно-откидное",
-        uz: "Karra | Burama-egmali",
-        en: "Fixed | Tilt-turn",
-      },
-      scheme: "/calculator/double/scheme_2_3_1.svg",
-      image: "/calculator/double/image_2_3.svg",
-    },
-    {
-      id: "double-turn-turn",
-      name: {
-        ru: "Поворотное | Поворотное",
-        uz: "Burama | Burama",
-        en: "Turn | Turn",
-      },
-      scheme: "/calculator/double/scheme_2_4.svg",
-      image: "/calculator/double/image_2_4.svg",
-    },
-    {
-      id: "double-turn-tiltturn",
-      name: {
-        ru: "Поворотное | Поворотно-откидное",
-        uz: "Burama | Burama-egmali",
-        en: "Turn | Tilt-turn",
-      },
-      scheme: "/calculator/double/scheme_2_4_2.svg",
-      image: "/calculator/double/image_2_4.svg",
-    },
-    {
-      id: "double-tiltturn-turn",
-      name: {
-        ru: "Поворотно-откидное | Поворотное",
-        uz: "Burama-egmali | Burama",
-        en: "Tilt-turn | Turn",
-      },
-      scheme: "/calculator/double/scheme_2_4_1.svg",
-      image: "/calculator/double/image_2_4.svg",
-    },
-    {
-      id: "double-tiltturn-tiltturn",
-      name: {
-        ru: "Поворотно-откидное | Поворотно-откидное",
-        uz: "Burama-egmali | Burama-egmali",
-        en: "Tilt-turn | Tilt-turn",
-      },
-      scheme: "/calculator/double/scheme_2_4_4.svg",
-      image: "/calculator/double/image_2_4.svg",
-    },
+    { id: "double-blind-blind", name: { ru: "Глухое | Глухое", uz: "Karra | Karra", en: "Fixed | Fixed" }, scheme: "/calculator/double/scheme_2_1.svg", image: "/calculator/double/image_2_1.svg" },
+    { id: "double-turn-blind", name: { ru: "Поворотное | Глухое", uz: "Burama | Karra", en: "Turn | Fixed" }, scheme: "/calculator/double/scheme_2_2.svg", image: "/calculator/double/image_2_2.svg" },
+    { id: "double-tiltturn-blind", name: { ru: "Поворотно-откидное | Глухое", uz: "Burama-egmali | Karra", en: "Tilt-turn | Fixed" }, scheme: "/calculator/double/scheme_2_2_1.svg", image: "/calculator/double/image_2_2.svg" },
+    { id: "double-blind-turn", name: { ru: "Глухое | Поворотное", uz: "Karra | Burama", en: "Fixed | Turn" }, scheme: "/calculator/double/scheme_2_3.svg", image: "/calculator/double/image_2_3.svg" },
+    { id: "double-blind-tiltturn", name: { ru: "Глухое | Поворотно-откидное", uz: "Karra | Burama-egmali", en: "Fixed | Tilt-turn" }, scheme: "/calculator/double/scheme_2_3_1.svg", image: "/calculator/double/image_2_3.svg" },
+    { id: "double-turn-turn", name: { ru: "Поворотное | Поворотное", uz: "Burama | Burama", en: "Turn | Turn" }, scheme: "/calculator/double/scheme_2_4.svg", image: "/calculator/double/image_2_4.svg" },
+    { id: "double-turn-tiltturn", name: { ru: "Поворотное | Поворотно-откидное", uz: "Burama | Burama-egmali", en: "Turn | Tilt-turn" }, scheme: "/calculator/double/scheme_2_4_2.svg", image: "/calculator/double/image_2_4.svg" },
+    { id: "double-tiltturn-turn", name: { ru: "Поворотно-откидное | Поворотное", uz: "Burama-egmali | Burama", en: "Tilt-turn | Turn" }, scheme: "/calculator/double/scheme_2_4_1.svg", image: "/calculator/double/image_2_4.svg" },
+    { id: "double-tiltturn-tiltturn", name: { ru: "Поворотно-откидное | Поворотно-откидное", uz: "Burama-egmali | Burama-egmali", en: "Tilt-turn | Tilt-turn" }, scheme: "/calculator/double/scheme_2_4_4.svg", image: "/calculator/double/image_2_4.svg" },
   ],
   triple: [
-    {
-      id: "triple-blind-blind-blind",
-      name: {
-        ru: "Глухое | Глухое | Глухое",
-        uz: "Karra | Karra | Karra",
-        en: "Fixed | Fixed | Fixed",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_1.svg",
-      image: "/calculator/tricuspid/image_3_1.svg",
-    },
-    {
-      id: "triple-turn-blind-turn",
-      name: {
-        ru: "Поворотное | Глухое | Поворотное",
-        uz: "Burama | Karra | Burama",
-        en: "Turn | Fixed | Turn",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_2.svg",
-      image: "/calculator/tricuspid/image_3_2.svg",
-    },
-    {
-      id: "triple-tiltturn-blind-tiltturn",
-      name: {
-        ru: "Поворотно-откидное | Глухое | Поворотно-откидное",
-        uz: "Burama-egmali | Karra | Burama-egmali",
-        en: "Tilt-turn | Fixed | Tilt-turn",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_2_1.svg",
-      image: "/calculator/tricuspid/image_3_2.svg",
-    },
-    {
-      id: "triple-blindturn-blind",
-      name: {
-        ru: "Глухое, Поворотное | Глухое",
-        uz: "Karra, Burama | Karra",
-        en: "Fixed, Turn | Fixed",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_3.svg",
-      image: "/calculator/tricuspid/image_3_3.svg",
-    },
-    {
-      id: "triple-blind-tiltturn-blind",
-      name: {
-        ru: "Глухое | Поворотно-откидное | Глухое",
-        uz: "Karra | Burama-egmali | Karra",
-        en: "Fixed | Tilt-turn | Fixed",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_3_1.svg",
-      image: "/calculator/tricuspid/image_3_3.svg",
-    },
-    {
-      id: "triple-turn-turn-turn",
-      name: {
-        ru: "Поворотное | Поворотное | Поворотное",
-        uz: "Burama | Burama | Burama",
-        en: "Turn | Turn | Turn",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_4.svg",
-      image: "/calculator/tricuspid/image_3_4_1.svg",
-    },
-    {
-      id: "triple-tiltturn-tiltturn-tiltturn",
-      name: {
-        ru: "Поворотно-откидное | Поворотно-откидное | Поворотно-откидное",
-        uz: "Burama-egmali | Burama-egmali | Burama-egmali",
-        en: "Tilt-turn | Tilt-turn | Tilt-turn",
-      },
-      scheme: "/calculator/tricuspid/scheme_3_4_4.svg",
-      image: "/calculator/tricuspid/image_3_4.svg",
-    },
+    { id: "triple-blind-blind-blind", name: { ru: "Глухое | Глухое | Глухое", uz: "Karra | Karra | Karra", en: "Fixed | Fixed | Fixed" }, scheme: "/calculator/tricuspid/scheme_3_1.svg", image: "/calculator/tricuspid/image_3_1.svg" },
+    { id: "triple-turn-blind-turn", name: { ru: "Поворотное | Глухое | Поворотное", uz: "Burama | Karra | Burama", en: "Turn | Fixed | Turn" }, scheme: "/calculator/tricuspid/scheme_3_2.svg", image: "/calculator/tricuspid/image_3_2.svg" },
+    { id: "triple-tiltturn-blind-tiltturn", name: { ru: "Поворотно-откидное | Глухое | Поворотно-откидное", uz: "Burama-egmali | Karra | Burama-egmali", en: "Tilt-turn | Fixed | Tilt-turn" }, scheme: "/calculator/tricuspid/scheme_3_2_1.svg", image: "/calculator/tricuspid/image_3_2.svg" },
+    { id: "triple-blindturn-blind", name: { ru: "Глухое, Поворотное | Глухое", uz: "Karra, Burama | Karra", en: "Fixed, Turn | Fixed" }, scheme: "/calculator/tricuspid/scheme_3_3.svg", image: "/calculator/tricuspid/image_3_3.svg" },
+    { id: "triple-blind-tiltturn-blind", name: { ru: "Глухое | Поворотно-откидное | Глухое", uz: "Karra | Burama-egmali | Karra", en: "Fixed | Tilt-turn | Fixed" }, scheme: "/calculator/tricuspid/scheme_3_3_1.svg", image: "/calculator/tricuspid/image_3_3.svg" },
+    { id: "triple-turn-turn-turn", name: { ru: "Поворотное | Поворотное | Поворотное", uz: "Burama | Burama | Burama", en: "Turn | Turn | Turn" }, scheme: "/calculator/tricuspid/scheme_3_4.svg", image: "/calculator/tricuspid/image_3_4_1.svg" },
+    { id: "triple-tiltturn-tiltturn-tiltturn", name: { ru: "Поворотно-откидное | Поворотно-откидное | Поворотно-откидное", uz: "Burama-egmali | Burama-egmali | Burama-egmali", en: "Tilt-turn | Tilt-turn | Tilt-turn" }, scheme: "/calculator/tricuspid/scheme_3_4_4.svg", image: "/calculator/tricuspid/image_3_4.svg" },
   ],
-  // Door artwork uses the same file for thumbnail and big preview — imzo's
-  // configurator ships only ~300px-tall portraits, which work fine in both
-  // slots.
   "door-single": [
-    {
-      id: "door-single-1",
-      name: { ru: "Дверь, вариант 1", uz: "Eshik, 1-variant", en: "Door, option 1" },
-      scheme: "/calculator/door/single-1.webp",
-      image: "/calculator/door/single-1.webp",
-    },
-    {
-      id: "door-single-2",
-      name: { ru: "Дверь, вариант 2", uz: "Eshik, 2-variant", en: "Door, option 2" },
-      scheme: "/calculator/door/single-2.webp",
-      image: "/calculator/door/single-2.webp",
-    },
-    {
-      id: "door-single-3",
-      name: { ru: "Дверь, вариант 3", uz: "Eshik, 3-variant", en: "Door, option 3" },
-      scheme: "/calculator/door/single-3.webp",
-      image: "/calculator/door/single-3.webp",
-    },
+    { id: "door-single-1", name: { ru: "Дверь, вариант 1", uz: "Eshik, 1-variant", en: "Door, option 1" }, scheme: "/calculator/door/single-1.webp", image: "/calculator/door/single-1.webp" },
+    { id: "door-single-2", name: { ru: "Дверь, вариант 2", uz: "Eshik, 2-variant", en: "Door, option 2" }, scheme: "/calculator/door/single-2.webp", image: "/calculator/door/single-2.webp" },
+    { id: "door-single-3", name: { ru: "Дверь, вариант 3", uz: "Eshik, 3-variant", en: "Door, option 3" }, scheme: "/calculator/door/single-3.webp", image: "/calculator/door/single-3.webp" },
   ],
   "door-double": [
-    {
-      id: "door-double-1",
-      name: {
-        ru: "Двухстворчатая",
-        uz: "Ikki tavaqali",
-        en: "Double-leaf",
-      },
-      scheme: "/calculator/door/double-1.webp",
-      image: "/calculator/door/double-1.webp",
-    },
+    { id: "door-double-1", name: { ru: "Двухстворчатая", uz: "Ikki tavaqali", en: "Double-leaf" }, scheme: "/calculator/door/double-1.webp", image: "/calculator/door/double-1.webp" },
   ],
 };
 
-/** Default variant per frame (used when the user switches frame). */
 export const DEFAULT_VARIANT: Record<Frame, string> = {
   single: VARIANTS.single[0].id,
-  double: VARIANTS.double[5].id, // Поворотное | Поворотное — most photogenic
-  triple: VARIANTS.triple[5].id, // 3-sash turn
+  double: VARIANTS.double[5].id,
+  triple: VARIANTS.triple[5].id,
   "door-single": VARIANTS["door-single"][0].id,
   "door-double": VARIANTS["door-double"][0].id,
 };
@@ -339,14 +164,238 @@ export function findVariant(id: string): FrameVariant | undefined {
   return undefined;
 }
 
-export function frameOfVariant(id: string): Frame {
-  for (const f of FRAMES) {
-    if (VARIANTS[f].some((v) => v.id === id)) return f;
-  }
-  return "double";
+/* -------------------------------------------------- color swatches */
+/* Auto-generated from imzo.uz/api/v1/app/category/. */
+export const COLOR_SWATCHES: Record<string, { name: string; img: string }> = {
+  "108fcbf1169e": { name: "Метбраш платиновый", img: "/calculator/colors/108fcbf1169e.jpg" },
+  "225bb0d3eea0": { name: "Белый", img: "/calculator/colors/225bb0d3eea0.jpg" },
+  "22823cdffea8": { name: "Шеффилдский серый дуб", img: "/calculator/colors/22823cdffea8.jpg" },
+  "3f3e87bf2470": { name: "Алюкс антрацит", img: "/calculator/colors/3f3e87bf2470.jpg" },
+  "3fdc56b04eb2": { name: "Солодовый дуб", img: "/calculator/colors/3fdc56b04eb2.jpg" },
+  "63b0cabbddc1": { name: "Шеффилдский высокогорный дуб", img: "/calculator/colors/63b0cabbddc1.jpg" },
+  "8fdcf9ef4b7c": { name: "Серый SW 306 G", img: "/calculator/colors/8fdcf9ef4b7c.jpg" },
+  "a4989620fd77": { name: "Шеффилдский бетонный дуб", img: "/calculator/colors/a4989620fd77.jpg" },
+  "b174136bf128": { name: "Метбраш серый кварц", img: "/calculator/colors/b174136bf128.jpg" },
+  "d72194dd7663": { name: "Метбраш серый антрацит", img: "/calculator/colors/d72194dd7663.jpg" },
+  "e6959603c6f6": { name: "Железно-серый", img: "/calculator/colors/e6959603c6f6.jpg" },
+  "e76be692729f": { name: "Дуб мокко", img: "/calculator/colors/e76be692729f.jpg" },
+  "eda263982875": { name: "Бело-алюминиевый", img: "/calculator/colors/eda263982875.png" },
+  "efc70dd53af2": { name: "Золотой дуб", img: "/calculator/colors/efc70dd53af2.jpg" },
+};
+
+/* ------------------------------------------------- profile serials */
+export interface ProfileSerial {
+  id: string;
+  name: string;
+  lamination: string[];
+  fittings: { id: string; name: string; colors: string[] }[];
 }
 
-/** Lamination colors shown as swatches in the mockup. */
+export const SERIAL_CATALOG: Record<Product, Partial<Record<MaterialType, ProfileSerial[]>>> = {
+  window: {
+    pvc: [
+      { id: "trio-60", name: "Trio 60", lamination: ["e76be692729f", "225bb0d3eea0", "8fdcf9ef4b7c", "efc70dd53af2", "3fdc56b04eb2"], fittings: [
+        { id: "akfa", name: "Akfa", colors: ["225bb0d3eea0"] },
+        { id: "roto-lux", name: "Roto lux", colors: ["225bb0d3eea0", "22823cdffea8", "efc70dd53af2", "e76be692729f", "3fdc56b04eb2"] },
+      ] },
+      { id: "quattro-60", name: "Quattro 60", lamination: ["e76be692729f", "225bb0d3eea0", "8fdcf9ef4b7c", "efc70dd53af2", "3fdc56b04eb2"], fittings: [
+        { id: "akfa", name: "Akfa", colors: ["225bb0d3eea0"] },
+        { id: "stick", name: "Stick", colors: ["225bb0d3eea0"] },
+        { id: "roto-lux", name: "Roto lux", colors: ["225bb0d3eea0", "22823cdffea8", "efc70dd53af2", "e76be692729f", "3fdc56b04eb2"] },
+        { id: "roto-swing", name: "Roto swing", colors: [] },
+      ] },
+      { id: "engelberg-70", name: "Engelberg 70", lamination: ["e76be692729f", "22823cdffea8", "3f3e87bf2470", "3fdc56b04eb2", "63b0cabbddc1", "b174136bf128", "efc70dd53af2", "d72194dd7663", "225bb0d3eea0", "a4989620fd77", "108fcbf1169e"], fittings: [
+        { id: "akfa", name: "Akfa", colors: ["225bb0d3eea0"] },
+        { id: "stick", name: "Stick", colors: ["225bb0d3eea0"] },
+        { id: "roto-lux", name: "Roto lux", colors: ["225bb0d3eea0", "22823cdffea8", "efc70dd53af2", "e76be692729f", "3fdc56b04eb2"] },
+        { id: "roto-swing", name: "Roto swing", colors: [] },
+        { id: "hoppe-ny", name: "Hoppe ny", colors: [] },
+        { id: "hoppe-hamburg", name: "Hoppe hamburg", colors: [] },
+      ] },
+      { id: "engelberg-80", name: "Engelberg 80", lamination: ["3f3e87bf2470", "3fdc56b04eb2", "a4989620fd77", "d72194dd7663", "e76be692729f", "108fcbf1169e", "225bb0d3eea0", "22823cdffea8", "63b0cabbddc1", "b174136bf128", "efc70dd53af2"], fittings: [
+        { id: "akfa", name: "Akfa", colors: ["225bb0d3eea0"] },
+        { id: "stick", name: "Stick", colors: ["225bb0d3eea0"] },
+        { id: "roto-lux", name: "Roto lux", colors: ["225bb0d3eea0", "22823cdffea8", "efc70dd53af2", "e76be692729f", "3fdc56b04eb2"] },
+        { id: "roto-swing", name: "Roto swing", colors: [] },
+        { id: "hoppe-ny", name: "Hoppe ny", colors: [] },
+        { id: "hoppe-hamburg", name: "Hoppe hamburg", colors: [] },
+      ] },
+    ],
+    aluminum: [
+      { id: "champion", name: "Champion", lamination: ["e6959603c6f6", "e76be692729f", "22823cdffea8", "8fdcf9ef4b7c", "eda263982875", "3f3e87bf2470", "efc70dd53af2", "225bb0d3eea0"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+      { id: "thermo-57-engelberg", name: "Thermo 57 Engelberg", lamination: ["e6959603c6f6", "efc70dd53af2", "22823cdffea8", "eda263982875", "d72194dd7663", "b174136bf128", "108fcbf1169e", "e76be692729f", "3fdc56b04eb2", "3f3e87bf2470", "8fdcf9ef4b7c", "225bb0d3eea0", "63b0cabbddc1", "a4989620fd77"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+      { id: "thermo-65-engelberg", name: "Thermo 65 Engelberg", lamination: ["e6959603c6f6", "a4989620fd77", "225bb0d3eea0", "d72194dd7663", "eda263982875", "8fdcf9ef4b7c", "3f3e87bf2470", "efc70dd53af2", "63b0cabbddc1", "108fcbf1169e", "22823cdffea8", "e76be692729f", "3fdc56b04eb2", "b174136bf128"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+      { id: "thermo-78-engelberg", name: "Thermo 78 Engelberg", lamination: ["e76be692729f", "3fdc56b04eb2", "3f3e87bf2470", "d72194dd7663", "225bb0d3eea0", "8fdcf9ef4b7c", "108fcbf1169e", "e6959603c6f6", "a4989620fd77", "eda263982875", "b174136bf128", "efc70dd53af2", "63b0cabbddc1", "22823cdffea8"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+      { id: "thermo-98-engelberg", name: "Thermo 98 Engelberg", lamination: ["e6959603c6f6", "a4989620fd77", "eda263982875", "b174136bf128", "108fcbf1169e", "22823cdffea8", "3f3e87bf2470", "efc70dd53af2", "63b0cabbddc1", "225bb0d3eea0", "8fdcf9ef4b7c", "d72194dd7663", "e76be692729f", "3fdc56b04eb2"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+      { id: "thermo-105-engelberg", name: "Thermo 105 Engelberg", lamination: ["22823cdffea8", "a4989620fd77", "b174136bf128"], fittings: [
+        { id: "master", name: "Master", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+        { id: "stublina", name: "Stublina", colors: ["225bb0d3eea0", "3f3e87bf2470"] },
+      ] },
+    ],
+  },
+  door: {
+    aluminum: [
+      { id: "champion", name: "Champion", lamination: ["225bb0d3eea0", "3f3e87bf2470"], fittings: [] },
+    ],
+  },
+};
+
+export function getSerials(p: Product, mt: MaterialType): ProfileSerial[] {
+  return SERIAL_CATALOG[p][mt] ?? [];
+}
+
+export function findSerial(p: Product, mt: MaterialType, id: string): ProfileSerial | undefined {
+  return getSerials(p, mt).find((s) => s.id === id);
+}
+
+export function getMaterialTypesFor(p: Product): MaterialType[] {
+  return (Object.keys(SERIAL_CATALOG[p]) as MaterialType[]).filter(
+    (mt) => (SERIAL_CATALOG[p][mt] ?? []).length > 0,
+  );
+}
+
+/* -------------------------------------------------- components */
+export const COMPONENTS = ["sill", "mosquito", "ebb"] as const;
+export type ComponentKey = (typeof COMPONENTS)[number];
+
+export interface ComponentState {
+  enabled: boolean;
+  width: number;
+}
+
+/* -------------------------------------------------- glass options */
+export const GLASS_OPTIONS = [
+  "single24",
+  "double32",
+  "energy",
+  "argon",
+  "multimix",
+  "single",
+] as const;
+export type GlassOption = (typeof GLASS_OPTIONS)[number];
+
+/* -------------------------------------------------- pricing */
+const GLASS_PRICE_PER_M2: Record<GlassOption, number> = {
+  single: 320_000,
+  single24: 420_000,
+  double32: 540_000,
+  energy: 620_000,
+  argon: 660_000,
+  multimix: 780_000,
+};
+
+const PRODUCT_FACTOR: Record<Product, number> = {
+  window: 1,
+  door: 1.25,
+};
+
+const MATERIAL_FACTOR: Record<MaterialType, number> = {
+  pvc: 1,
+  aluminum: 1.18,
+};
+
+const FRAME_FACTOR: Record<Frame, number> = {
+  single: 1,
+  double: 1.12,
+  triple: 1.22,
+  "door-single": 1,
+  "door-double": 1.18,
+};
+
+const COMPONENT_PRICE_PER_M: Record<ComponentKey, number> = {
+  sill: 140_000,     // подоконник за метр погонный
+  mosquito: 95_000,  // москитка за метр (берётся ширина)
+  ebb: 70_000,       // отлив за метр
+};
+
+/* -------------------------------------------------- state */
+export interface CalcState {
+  product: Product;
+  materialType: MaterialType;
+  serial: string;
+  frame: Frame;
+  variantId: string;
+  lamination: string;
+  fittingBrand: string;
+  fittingColor: string;
+  glass: GlassOption;
+  width: number;
+  height: number;
+  quantity: number;
+  components: Record<ComponentKey, ComponentState>;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  comment: string;
+}
+
+const initialSerial = SERIAL_CATALOG.window.pvc![2]; // Engelberg 70 — has the broadest options
+export const initialCalcState: CalcState = {
+  product: "window",
+  materialType: "pvc",
+  serial: initialSerial.id,
+  frame: "double",
+  variantId: DEFAULT_VARIANT.double,
+  lamination: initialSerial.lamination[1] ?? initialSerial.lamination[0],
+  fittingBrand: initialSerial.fittings[0]?.id ?? "",
+  fittingColor: initialSerial.fittings[0]?.colors[0] ?? "",
+  glass: "double32",
+  width: 1400,
+  height: 1400,
+  quantity: 1,
+  components: {
+    sill: { enabled: false, width: 1400 },
+    mosquito: { enabled: false, width: 1400 },
+    ebb: { enabled: false, width: 1400 },
+  },
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  comment: "",
+};
+
+export function estimatePrice(s: CalcState): number {
+  const widthM = Math.max(0, Number(s.width) || 0) / 1000;
+  const heightM = Math.max(0, Number(s.height) || 0) / 1000;
+  const areaM2 = widthM * heightM;
+  const base = GLASS_PRICE_PER_M2[s.glass] * areaM2;
+  let unit =
+    base *
+    PRODUCT_FACTOR[s.product] *
+    MATERIAL_FACTOR[s.materialType] *
+    FRAME_FACTOR[s.frame];
+
+  // Components priced per metre of width (in metres).
+  for (const k of COMPONENTS) {
+    const c = s.components[k];
+    if (!c.enabled) continue;
+    const wM = Math.max(0, Number(c.width) || 0) / 1000;
+    unit += COMPONENT_PRICE_PER_M[k] * wM;
+  }
+
+  const qty = Math.max(1, Number(s.quantity) || 1);
+  return Math.round((unit * qty) / 1000) * 1000;
+}
+
+/* Back-compat — kept while older imports still reference these. The new
+ * configurator uses SERIAL_CATALOG and COLOR_SWATCHES instead. */
 export const COLORS = [
   { id: "white", hex: "#ffffff" },
   { id: "darkOak", hex: "#5a3a1f" },
@@ -359,92 +408,3 @@ export type ColorId = (typeof COLORS)[number]["id"];
 export const SERIES_OPTIONS = PROFILE_SERIES.filter(
   (p) => p.category === "pvc",
 ).map((p) => p.slug);
-
-export const GLASS_OPTIONS = [
-  "single24",
-  "double32",
-  "energy",
-  "argon",
-  "multimix",
-  "single",
-] as const;
-export type GlassOption = (typeof GLASS_OPTIONS)[number];
-
-/** Base price per m² (indicative, in UZS) by glass type. */
-const GLASS_PRICE_PER_M2: Record<GlassOption, number> = {
-  single: 320_000,
-  single24: 420_000,
-  double32: 540_000,
-  energy: 620_000,
-  argon: 660_000,
-  multimix: 780_000,
-};
-
-const TYPE_FACTOR: Record<ConstructionType, number> = {
-  window: 1,
-  door: 1.25,
-  stained: 1.4,
-  balcony: 1.15,
-  facade: 1.6,
-};
-
-/** Larger frames carry slightly more profile, ironwork and labour cost. */
-const FRAME_FACTOR: Record<Frame, number> = {
-  single: 1,
-  double: 1.12,
-  triple: 1.22,
-  // Door frames are baselined to window-double's labour cost and scale up
-  // for the double-leaf variant. TYPE_FACTOR.door already adds the door
-  // premium, so we keep the frame multiplier modest here.
-  "door-single": 1,
-  "door-double": 1.18,
-};
-
-const MOSQUITO_PRICE = 180_000;
-const SILL_PRICE = 140_000;
-
-export interface CalcState {
-  type: ConstructionType;
-  frame: Frame;
-  variantId: string;
-  color: ColorId;
-  series: string;
-  glass: GlassOption;
-  width: number;
-  height: number;
-  quantity: number;
-  mosquito: boolean;
-  sill: boolean;
-  name: string;
-  phone: string;
-  comment: string;
-}
-
-export const initialCalcState: CalcState = {
-  type: "window",
-  frame: "double",
-  variantId: DEFAULT_VARIANT.double,
-  color: "white",
-  series: SERIES_OPTIONS[0],
-  glass: "double32",
-  width: 1400,
-  height: 1400,
-  quantity: 1,
-  mosquito: false,
-  sill: false,
-  name: "",
-  phone: "",
-  comment: "",
-};
-
-export function estimatePrice(s: CalcState): number {
-  const widthM = Math.max(0, Number(s.width) || 0) / 1000;
-  const heightM = Math.max(0, Number(s.height) || 0) / 1000;
-  const areaM2 = widthM * heightM;
-  const base = GLASS_PRICE_PER_M2[s.glass] * areaM2;
-  let unit = base * TYPE_FACTOR[s.type] * FRAME_FACTOR[s.frame];
-  if (s.mosquito) unit += MOSQUITO_PRICE;
-  if (s.sill) unit += SILL_PRICE;
-  const qty = Math.max(1, Number(s.quantity) || 1);
-  return Math.round((unit * qty) / 1000) * 1000;
-}

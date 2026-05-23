@@ -1,41 +1,84 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn, formatPrice } from "@/lib/utils";
 import { WindowPreview } from "./WindowPreview";
-import { TYPE_SVG, FRAME_PICTO } from "./shapes";
-import { PROFILE_SERIES } from "@/data/catalog";
+import { FRAME_PICTO } from "./shapes";
 import {
-  CONSTRUCTION_TYPES,
+  PRODUCTS,
+  MATERIAL_TYPES,
+  COMPONENTS,
   VARIANTS,
   DEFAULT_VARIANT,
+  FRAMES_BY_PRODUCT,
   FRAME_SIZE_LIMITS,
-  getFramesFor,
-  findVariant,
-  COLORS,
-  SERIES_OPTIONS,
   GLASS_OPTIONS,
+  SERIAL_CATALOG,
+  COLOR_SWATCHES,
+  getSerials,
+  findSerial,
+  findVariant,
+  getMaterialTypesFor,
   initialCalcState,
   estimatePrice,
   type CalcState,
-  type ConstructionType,
+  type Product,
+  type MaterialType,
   type Frame,
+  type ComponentKey,
 } from "@/data/calculator";
 
-const STEPS = ["type", "sizes", "params", "extra", "contacts"] as const;
-const seriesName = (slug: string) =>
-  PROFILE_SERIES.find((p) => p.slug === slug)?.name ?? slug;
+/* Tiny visual primitives shared across sections */
+const SECTION_TITLE =
+  "m-0 mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-2";
 
-const PTITLE =
-  "m-0 mb-3.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-2";
-const SELECT =
-  "flex items-center justify-between border border-[#DDD] bg-white px-3.5 py-[11px] text-[13px] font-medium text-[#444]";
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-t border-[#ECECEC] pt-5 first:border-t-0 first:pt-0">
+      <h4 className={SECTION_TITLE}>{title}</h4>
+      {children}
+    </div>
+  );
+}
+
+function ColorSwatchButton({
+  id,
+  on,
+  onClick,
+}: {
+  id: string;
+  on: boolean;
+  onClick: () => void;
+}) {
+  const sw = COLOR_SWATCHES[id];
+  if (!sw) return null;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={sw.name}
+      aria-label={sw.name}
+      className={cn(
+        "relative size-[34px] overflow-hidden border bg-cover bg-center transition-all",
+        on
+          ? "border-[#ddd] outline outline-[1.5px] outline-orange outline-offset-2"
+          : "border-[#ddd] hover:outline hover:outline-[1px] hover:outline-[#bbb] hover:outline-offset-1",
+      )}
+      style={{ backgroundImage: `url(${sw.img})` }}
+    />
+  );
+}
 
 export function Calculator() {
   const { t, i18n } = useTranslation();
   const lang = (i18n.language?.slice(0, 2) ?? "ru") as "ru" | "uz" | "en";
-  const [step, setStep] = useState(0);
   const [state, setState] = useState<CalcState>(initialCalcState);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
@@ -44,40 +87,117 @@ export function Calculator() {
   const set = <K extends keyof CalcState>(k: K, v: CalcState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
 
-  /** Switch frame and pick that frame's default variant. */
-  const setFrame = (f: Frame) =>
-    setState((s) => ({ ...s, frame: f, variantId: DEFAULT_VARIANT[f] }));
-
-  /** Switch construction type and jump to a default frame/variant for that
-   * type so the picker and preview never end up in an inconsistent state
-   * (e.g. type=door but frame=triple-sash-window). */
-  const setType = (tp: ConstructionType) =>
-    setState((s) => {
-      const framesForType = getFramesFor(tp);
-      if (framesForType.length === 0) return { ...s, type: tp };
-      const f = framesForType[0];
-      return { ...s, type: tp, frame: f, variantId: DEFAULT_VARIANT[f] };
-    });
-
+  /* ---------------- product / type / serial coherence ---------------- */
+  const materialTypes = getMaterialTypesFor(state.product);
+  const serials = getSerials(state.product, state.materialType);
+  const serial =
+    findSerial(state.product, state.materialType, state.serial) ?? serials[0];
   const variant = findVariant(state.variantId) ?? VARIANTS.double[0];
   const variantName = variant.name[lang] ?? variant.name.ru;
-  /** Frames available for the current construction type. Empty list means
-   * the type is handled via the "individual quote" fallback. */
-  const availableFrames = getFramesFor(state.type);
-  const hasFrames = availableFrames.length > 0;
-  const isLast = step === STEPS.length - 1;
+  const availableFrames = FRAMES_BY_PRODUCT[state.product];
+  const limits = FRAME_SIZE_LIMITS[state.frame];
 
-  function advance() {
-    if (isLast) {
-      if (!state.name.trim() || !state.phone.trim()) {
-        setError(true);
-        return;
-      }
-      setSubmitted(true);
+  /** When the user switches product, lock the rest of the state to a
+   * coherent default: pick the first available material → first serial →
+   * its first lamination / fitting, and reset frame/variant to that
+   * product's first viable pair. */
+  function setProduct(p: Product) {
+    setState((s) => {
+      const mts = getMaterialTypesFor(p);
+      const mt = mts.includes(s.materialType) ? s.materialType : mts[0];
+      const ser = SERIAL_CATALOG[p][mt]?.[0];
+      const frames = FRAMES_BY_PRODUCT[p];
+      const f = frames.includes(s.frame) ? s.frame : frames[0];
+      return {
+        ...s,
+        product: p,
+        materialType: mt,
+        serial: ser?.id ?? "",
+        lamination: ser?.lamination[1] ?? ser?.lamination[0] ?? "",
+        fittingBrand: ser?.fittings[0]?.id ?? "",
+        fittingColor: ser?.fittings[0]?.colors[0] ?? "",
+        frame: f,
+        variantId: DEFAULT_VARIANT[f],
+      };
+    });
+  }
+
+  function setMaterialType(mt: MaterialType) {
+    setState((s) => {
+      const ser = SERIAL_CATALOG[s.product][mt]?.[0];
+      return {
+        ...s,
+        materialType: mt,
+        serial: ser?.id ?? "",
+        lamination: ser?.lamination[1] ?? ser?.lamination[0] ?? "",
+        fittingBrand: ser?.fittings[0]?.id ?? "",
+        fittingColor: ser?.fittings[0]?.colors[0] ?? "",
+      };
+    });
+  }
+
+  function setSerial(id: string) {
+    setState((s) => {
+      const ser = findSerial(s.product, s.materialType, id);
+      return {
+        ...s,
+        serial: id,
+        lamination: ser?.lamination[1] ?? ser?.lamination[0] ?? "",
+        fittingBrand: ser?.fittings[0]?.id ?? "",
+        fittingColor: ser?.fittings[0]?.colors[0] ?? "",
+      };
+    });
+  }
+
+  function setFrame(f: Frame) {
+    setState((s) => ({ ...s, frame: f, variantId: DEFAULT_VARIANT[f] }));
+  }
+
+  function setFitting(brandId: string) {
+    setState((s) => {
+      const b = serial?.fittings.find((x) => x.id === brandId);
+      return {
+        ...s,
+        fittingBrand: brandId,
+        fittingColor: b?.colors[0] ?? "",
+      };
+    });
+  }
+
+  function setComponent(k: ComponentKey, patch: Partial<{ enabled: boolean; width: number }>) {
+    setState((s) => ({
+      ...s,
+      components: { ...s.components, [k]: { ...s.components[k], ...patch } },
+    }));
+  }
+
+  /* Keep components.width in sync with the main window width by default
+   * until the user types something different. */
+  useEffect(() => {
+    setState((s) => ({
+      ...s,
+      components: Object.fromEntries(
+        COMPONENTS.map((k) => [
+          k,
+          s.components[k].enabled
+            ? s.components[k]
+            : { ...s.components[k], width: s.width },
+        ]),
+      ) as CalcState["components"],
+    }));
+    // only when the master width changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.width]);
+
+  function submit() {
+    if (!state.name.trim() || !state.phone.trim()) {
+      setError(true);
       return;
     }
-    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    setSubmitted(true);
   }
+
+  const currentFitting = serial?.fittings.find((f) => f.id === state.fittingBrand);
 
   return (
     <section id="calculator" className="scroll-mt-40 bg-bg py-10 sm:py-[38px]">
@@ -89,144 +209,127 @@ export function Calculator() {
           {t("calc.subtitle")}
         </div>
 
-        {/* Stepper — scrolls horizontally on narrow screens so the labels
-            don't wrap to multiple lines with mismatched alignment. */}
-        <div className="mb-6 -mx-5 overflow-x-auto border-b border-[#E4E4E4] pb-[18px] [scrollbar-width:none] sm:mx-0 [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-max gap-x-5 px-5 sm:gap-x-[42px] sm:w-auto sm:px-0">
-            {STEPS.map((s, i) => {
-              const active = i === step;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => !submitted && setStep(i)}
-                  className={cn(
-                    "flex shrink-0 items-center gap-2.5 text-[12px] font-semibold sm:text-[13px]",
-                    active ? "text-[#111]" : "text-[#9a9a9a]",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "grid size-[22px] shrink-0 place-items-center rounded-full text-[12px] font-bold text-white",
-                      active ? "bg-orange" : "bg-[#DCDCDC]",
-                    )}
-                  >
-                    {i + 1}
-                  </span>
-                  {t(`calc.steps.${s}`)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
-          {/* LEFT PANEL */}
-          <div className="border border-[#ECECEC] bg-white p-4 sm:p-[22px]">
+          {/* ============================== LEFT: configurator ===== */}
+          <div className="mx-auto w-full max-w-[760px] space-y-5 border border-[#ECECEC] bg-white p-4 sm:p-6 lg:mx-0 lg:max-w-none">
             {submitted ? (
-              <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
                 <span className="grid size-14 place-items-center rounded-full bg-[#FFF6EB] text-orange">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M5 13l4 4L19 7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
                 <p className="mt-4 max-w-sm text-base font-semibold text-ink-2">
                   {t("calc.success")}
                 </p>
               </div>
-            ) : step === 0 ? (
-              <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
-                {/* Construction type column */}
-                <div>
-                  <div className={PTITLE}>{t("calc.constructionType")}</div>
-                  <div className="flex flex-col gap-1.5">
-                    {CONSTRUCTION_TYPES.map((tp) => {
-                      const on = state.type === tp;
+            ) : (
+              <>
+                {/* ---- product tabs (Окно / Дверь) ---- */}
+                <div className="flex gap-2">
+                  {PRODUCTS.map((p) => {
+                    const on = state.product === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setProduct(p)}
+                        className={cn(
+                          "flex-1 border px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors",
+                          on
+                            ? "border-orange bg-orange text-white"
+                            : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                        )}
+                      >
+                        {t(`calc.products.${p}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ---- material type (ПВХ / Алюминий) ---- */}
+                {materialTypes.length > 1 && (
+                  <Section title={t("calc.material")}>
+                    <div className="flex gap-2">
+                      {materialTypes.map((mt) => {
+                        const on = state.materialType === mt;
+                        return (
+                          <button
+                            key={mt}
+                            type="button"
+                            onClick={() => setMaterialType(mt)}
+                            className={cn(
+                              "border px-4 py-2.5 text-[13px] font-semibold transition-colors",
+                              on
+                                ? "border-ink-2 bg-ink-2 text-white"
+                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                            )}
+                          >
+                            {t(`calc.materials.${mt}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ---- serial ---- */}
+                {serials.length > 0 && (
+                  <Section title={t("calc.profileSerial")}>
+                    <div className="flex flex-wrap gap-2">
+                      {serials.map((s) => {
+                        const on = state.serial === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setSerial(s.id)}
+                            className={cn(
+                              "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                              on
+                                ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                            )}
+                          >
+                            {s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ---- frame (sash count) ---- */}
+                <Section title={t("calc.frame")}>
+                  <div className="flex flex-wrap gap-2">
+                    {availableFrames.map((f) => {
+                      const on = state.frame === f;
                       return (
                         <button
-                          key={tp}
+                          key={f}
                           type="button"
-                          onClick={() => setType(tp)}
+                          onClick={() => setFrame(f)}
                           className={cn(
-                            "flex items-center gap-2.5 border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors",
+                            "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
                             on
-                              ? "border-[#F3B66A] bg-[#FFF6EB] text-[#111]"
+                              ? "border-orange bg-[#FFF6EB] text-[#111]"
                               : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
                           )}
                         >
-                          <span
-                            className={cn(
-                              "[&>svg]:size-[18px]",
-                              on ? "text-orange" : "text-[#555]",
-                            )}
-                          >
-                            {TYPE_SVG[tp]}
+                          <span className={on ? "text-orange" : "text-[#666]"}>
+                            {FRAME_PICTO[f]}
                           </span>
-                          {t(`calc.types.${tp}`)}
+                          {t(`calc.frames.${f}`)}
                         </button>
                       );
                     })}
                   </div>
-                </div>
+                </Section>
 
-                {/* Frame + variant picker (window only — other types
-                    don't have configurator artwork yet and are quoted
-                    individually). */}
-                <div>
-                  {!hasFrames && (
-                    <div className="mb-5 flex items-start gap-3 border border-[#F3D89F] bg-[#FFF8EC] p-3.5">
-                      <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-white text-orange [&>svg]:size-[18px]">
-                        {TYPE_SVG[state.type]}
-                      </span>
-                      <div className="text-[13px] leading-[1.45] text-[#5a4628]">
-                        <b className="block text-[#111]">
-                          {t(`calc.types.${state.type}`)}
-                        </b>
-                        {t("calc.individualNote")}
-                      </div>
-                    </div>
-                  )}
-
-                  {hasFrames && (
-                    <>
-                      {/* Frame chips */}
-                      <div className={PTITLE}>{t("calc.frame")}</div>
-                      <div className="mb-5 flex flex-wrap gap-2">
-                        {availableFrames.map((f) => {
-                          const on = state.frame === f;
-                          return (
-                            <button
-                              key={f}
-                              type="button"
-                              onClick={() => setFrame(f)}
-                              className={cn(
-                                "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
-                                on
-                                  ? "border-orange bg-[#FFF6EB] text-[#111]"
-                                  : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
-                              )}
-                            >
-                              <span
-                                className={on ? "text-orange" : "text-[#666]"}
-                              >
-                                {FRAME_PICTO[f]}
-                              </span>
-                              {t(`calc.frames.${f}`)}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Variant scheme grid */}
-                      <div className={PTITLE}>{t("calc.opening")}</div>
-                      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                        {VARIANTS[state.frame].map((v) => {
+                {/* ---- opening variant ---- */}
+                <Section title={t("calc.opening")}>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {VARIANTS[state.frame].map((v) => {
                       const on = state.variantId === v.id;
                       return (
                         <button
@@ -247,9 +350,9 @@ export function Calculator() {
                             alt=""
                             width={46}
                             height={60}
-                            className="block h-[60px] w-auto object-contain"
                             loading="lazy"
                             decoding="async"
+                            className="block h-[60px] w-auto object-contain"
                           />
                           <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-[#444]">
                             {v.name[lang] ?? v.name.ru}
@@ -257,221 +360,192 @@ export function Calculator() {
                         </button>
                       );
                     })}
-                      </div>
-                    </>
-                  )}
+                  </div>
+                </Section>
 
-                  {/* Color + series + glass */}
-                  <div className="grid gap-[18px] sm:grid-cols-[1.1fr_1fr_1fr]">
-                    <div>
-                      <h4 className={PTITLE}>{t("calc.color")}</h4>
-                      <div className="flex items-center gap-2">
-                        {COLORS.map((c) => (
+                {/* ---- sizes (plain number inputs — client's explicit ask) ---- */}
+                <Section title={t("calc.sizesTitle")}>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {(
+                      [
+                        ["width", t("calc.width"), limits.minW, limits.maxW],
+                        ["height", t("calc.height"), limits.minH, limits.maxH],
+                        ["quantity", t("calc.quantity"), 1, 100],
+                      ] as const
+                    ).map(([k, label, min, max]) => (
+                      <label key={k} className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          {label}{" "}
+                          {k !== "quantity" && (
+                            <span className="text-[#aaa]">
+                              ({min}–{max} мм)
+                            </span>
+                          )}
+                        </span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={min}
+                          max={max}
+                          value={state[k]}
+                          onChange={(e) => set(k, Number(e.target.value))}
+                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </Section>
+
+                {/* ---- glass ---- */}
+                <Section title={t("calc.glass")}>
+                  <select
+                    value={state.glass}
+                    onChange={(e) => set("glass", e.target.value as CalcState["glass"])}
+                    className="h-[44px] w-full appearance-none border border-[#DDD] bg-white px-3.5 text-[13px] font-medium text-[#222] outline-none focus:border-orange"
+                  >
+                    {GLASS_OPTIONS.map((g) => (
+                      <option key={g} value={g}>
+                        {t(`glass.names.${g}`)}
+                      </option>
+                    ))}
+                  </select>
+                </Section>
+
+                {/* ---- lamination ---- */}
+                {serial && serial.lamination.length > 0 && (
+                  <Section title={t("calc.lamination")}>
+                    <div className="flex flex-wrap gap-2">
+                      {serial.lamination.map((c) => (
+                        <ColorSwatchButton
+                          key={c}
+                          id={c}
+                          on={state.lamination === c}
+                          onClick={() => set("lamination", c)}
+                        />
+                      ))}
+                    </div>
+                    {COLOR_SWATCHES[state.lamination] && (
+                      <p className="mt-2 text-[11px] text-[#888]">
+                        {COLOR_SWATCHES[state.lamination].name}
+                      </p>
+                    )}
+                  </Section>
+                )}
+
+                {/* ---- fittings (brand + brand colors) ---- */}
+                {serial && serial.fittings.length > 0 && (
+                  <Section title={t("calc.fittings")}>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {serial.fittings.map((b) => {
+                        const on = state.fittingBrand === b.id;
+                        return (
                           <button
-                            key={c.id}
+                            key={b.id}
                             type="button"
-                            title={t(`calc.colors.${c.id}`)}
-                            aria-label={t(`calc.colors.${c.id}`)}
-                            onClick={() => set("color", c.id)}
+                            onClick={() => setFitting(b.id)}
                             className={cn(
-                              "relative size-[30px] border",
-                              state.color === c.id
-                                ? "border-[#ddd] outline outline-[1.5px] outline-orange outline-offset-2"
-                                : "border-[#ddd]",
+                              "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                              on
+                                ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
                             )}
-                            style={{ backgroundColor: c.hex }}
+                          >
+                            {b.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {currentFitting && currentFitting.colors.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {currentFitting.colors.map((c) => (
+                          <ColorSwatchButton
+                            key={c}
+                            id={c}
+                            on={state.fittingColor === c}
+                            onClick={() => set("fittingColor", c)}
                           />
                         ))}
-                        <span className="grid size-[30px] place-items-center border border-[#ddd] font-bold text-[#888]">
-                          +
-                        </span>
                       </div>
-                    </div>
-                    <div>
-                      <h4 className={PTITLE}>{t("calc.series")}</h4>
-                      <select
-                        value={state.series}
-                        onChange={(e) => set("series", e.target.value)}
-                        className={cn(SELECT, "w-full appearance-none")}
-                      >
-                        {SERIES_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {seriesName(s)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <h4 className={PTITLE}>{t("calc.glass")}</h4>
-                      <select
-                        value={state.glass}
-                        onChange={(e) =>
-                          set("glass", e.target.value as CalcState["glass"])
-                        }
-                        className={cn(SELECT, "w-full appearance-none")}
-                      >
-                        {GLASS_OPTIONS.map((g) => (
-                          <option key={g} value={g}>
-                            {t(`glass.names.${g}`)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : step === 1 ? (
-              <>
-                <div className={PTITLE}>{t("calc.steps.sizes")}</div>
-                <div className="grid gap-[18px] sm:grid-cols-3">
-                  {(
-                    [
-                      [
-                        "width",
-                        t("calc.width"),
-                        FRAME_SIZE_LIMITS[state.frame].minW,
-                        FRAME_SIZE_LIMITS[state.frame].maxW,
-                      ],
-                      [
-                        "height",
-                        t("calc.height"),
-                        FRAME_SIZE_LIMITS[state.frame].minH,
-                        FRAME_SIZE_LIMITS[state.frame].maxH,
-                      ],
-                      ["quantity", t("calc.quantity"), 1, 100],
-                    ] as const
-                  ).map(([k, label, min, max]) => (
-                    <label key={k} className="block">
-                      <span className="mb-2 block text-[11px] font-semibold text-[#666]">
-                        {label}{" "}
-                        {k !== "quantity" && (
-                          <span className="text-[#aaa]">
-                            ({min}–{max} мм)
-                          </span>
-                        )}
-                      </span>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={min}
-                        max={max}
-                        value={state[k]}
-                        onChange={(e) => set(k, Number(e.target.value))}
-                        className="h-[46px] w-full border border-[#DDD] bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </>
-            ) : step === 2 ? (
-              <>
-                <div className={PTITLE}>{t("calc.steps.params")}</div>
-                <div className="grid gap-[18px] sm:grid-cols-2">
-                  <div>
-                    <h4 className="mb-2 text-[11px] font-semibold text-[#666]">
-                      {t("calc.series")}
-                    </h4>
-                    <select
-                      value={state.series}
-                      onChange={(e) => set("series", e.target.value)}
-                      className={cn(SELECT, "w-full appearance-none")}
-                    >
-                      {SERIES_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {seriesName(s)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <h4 className="mb-2 text-[11px] font-semibold text-[#666]">
-                      {t("calc.glass")}
-                    </h4>
-                    <select
-                      value={state.glass}
-                      onChange={(e) =>
-                        set("glass", e.target.value as CalcState["glass"])
-                      }
-                      className={cn(SELECT, "w-full appearance-none")}
-                    >
-                      {GLASS_OPTIONS.map((g) => (
-                        <option key={g} value={g}>
-                          {t(`glass.names.${g}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </>
-            ) : step === 3 ? (
-              <>
-                <div className={PTITLE}>{t("calc.additional")}</div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {(["mosquito", "sill"] as const).map((k) => {
-                    const on = state[k];
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => set(k, !on)}
-                        className={cn(
-                          "flex items-center gap-2.5 border p-4 text-left text-[13px] font-medium transition-colors",
-                          on
-                            ? "border-orange bg-[#FFF6EB]"
-                            : "border-[#EFEFEF] hover:border-[#cfcfcf]",
-                        )}
-                      >
-                        <span
+                    )}
+                  </Section>
+                )}
+
+                {/* ---- components (sill / mosquito / ebb) with own width ---- */}
+                <Section title={t("calc.components")}>
+                  <div className="space-y-2">
+                    {COMPONENTS.map((k) => {
+                      const c = state.components[k];
+                      return (
+                        <div
+                          key={k}
                           className={cn(
-                            "grid size-4 place-items-center border-[1.5px]",
-                            on
-                              ? "border-ink-2 bg-ink-2 text-white"
-                              : "border-[#1a1a1a] bg-white",
+                            "flex items-center gap-3 border px-3 py-2.5 transition-colors",
+                            c.enabled
+                              ? "border-orange bg-[#FFF6EB]"
+                              : "border-[#EFEFEF] hover:border-[#cfcfcf]",
                           )}
                         >
-                          {on && (
-                            <svg
-                              width="10"
-                              height="10"
-                              viewBox="0 0 10 10"
-                              fill="none"
+                          <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#222]">
+                            <span
+                              className={cn(
+                                "grid size-4 place-items-center border-[1.5px]",
+                                c.enabled
+                                  ? "border-ink-2 bg-ink-2 text-white"
+                                  : "border-[#1a1a1a] bg-white",
+                              )}
                             >
-                              <path
-                                d="M1 5l3 3 5-7"
-                                stroke="currentColor"
-                                strokeWidth="1.6"
+                              {c.enabled && (
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                  <path d="M1 5l3 3 5-7" stroke="currentColor" strokeWidth="1.6" />
+                                </svg>
+                              )}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={c.enabled}
+                              onChange={(e) => setComponent(k, { enabled: e.target.checked })}
+                              className="sr-only"
+                            />
+                            {t(`calc.componentNames.${k}`)}
+                          </label>
+                          {c.enabled && (
+                            <label className="flex items-center gap-2 text-[11px] text-[#666]">
+                              {t("calc.widthMm")}
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min={300}
+                                max={4000}
+                                value={c.width}
+                                onChange={(e) => setComponent(k, { width: Number(e.target.value) })}
+                                className="h-8 w-[90px] border border-[#DDD] bg-white px-2 text-[13px] font-semibold text-[#222] outline-none focus:border-orange"
                               />
-                            </svg>
+                            </label>
                           )}
-                        </span>
-                        {t(`calc.${k}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={PTITLE}>{t("calc.steps.contacts")}</div>
-                <div className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Section>
+
+                {/* ---- contacts ---- */}
+                <Section title={t("calc.steps.contacts")}>
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block">
-                      <span className="mb-2 block text-[11px] font-semibold text-[#666]">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
                         {t("calc.name")} *
                       </span>
                       <input
                         value={state.name}
                         onChange={(e) => set("name", e.target.value)}
                         className={cn(
-                          "h-[46px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                          error && !state.name.trim()
-                            ? "border-orange"
-                            : "border-[#DDD]",
+                          "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                          error && !state.name.trim() ? "border-orange" : "border-[#DDD]",
                         )}
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-2 block text-[11px] font-semibold text-[#666]">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
                         {t("calc.phone")} *
                       </span>
                       <input
@@ -480,16 +554,35 @@ export function Calculator() {
                         placeholder="+998"
                         onChange={(e) => set("phone", e.target.value)}
                         className={cn(
-                          "h-[46px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                          error && !state.phone.trim()
-                            ? "border-orange"
-                            : "border-[#DDD]",
+                          "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                          error && !state.phone.trim() ? "border-orange" : "border-[#DDD]",
                         )}
                       />
                     </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                        Email
+                      </span>
+                      <input
+                        type="email"
+                        value={state.email}
+                        onChange={(e) => set("email", e.target.value)}
+                        className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                        {t("calc.address")}
+                      </span>
+                      <input
+                        value={state.address}
+                        onChange={(e) => set("address", e.target.value)}
+                        className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                      />
+                    </label>
                   </div>
-                  <label className="block">
-                    <span className="mb-2 block text-[11px] font-semibold text-[#666]">
+                  <label className="mt-3 block">
+                    <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
                       {t("calc.comment")}
                     </span>
                     <textarea
@@ -500,117 +593,72 @@ export function Calculator() {
                     />
                   </label>
                   {error && (
-                    <p className="text-[13px] font-medium text-orange">
+                    <p className="mt-2 text-[13px] font-medium text-orange">
                       {t("calc.required")}
                     </p>
                   )}
-                </div>
+                </Section>
               </>
             )}
           </div>
 
-          {/* RIGHT PREVIEW */}
-          <div className="mx-auto w-full max-w-[420px] border border-[#ECECEC] bg-white px-4 py-5 sm:px-[22px] sm:py-7 lg:mx-0 lg:max-w-none">
-            {hasFrames ? (
-              <>
-                <WindowPreview
-                  imageSrc={variant.image}
-                  width={state.width}
-                  height={state.height}
-                  alt={variantName}
-                  /* Door artwork is portrait (~1:2.5) — keep it compact so
-                   * the panel feels balanced instead of being dominated by
-                   * a single tall image. */
-                  narrow={state.frame.startsWith("door-")}
-                />
-
-                <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
-                  {variantName}
-                </div>
-              </>
-            ) : (
-              <div className="mx-[18px] mt-[18px] mb-3.5">
-                <div className="grid aspect-square place-items-center bg-[linear-gradient(180deg,#eef3f6,#dde6ec)] text-[#9aabb6] [&>span>svg]:size-24">
-                  <span className="text-[#7a8d99]">
-                    {TYPE_SVG[state.type]}
-                  </span>
-                </div>
-                <div className="mt-3 text-center text-[12px] font-semibold text-[#555]">
-                  {t(`calc.types.${state.type}`)}
-                </div>
-              </div>
-            )}
-
-            <div className={cn(PTITLE, "mt-[18px]")}>
-              {t("calc.additional")}
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {(["mosquito", "sill"] as const).map((k) => {
-                const on = state[k];
-                return (
-                  <label
-                    key={k}
-                    className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#222]"
-                    onClick={() => set(k, !on)}
-                  >
-                    <span
-                      className={cn(
-                        "grid size-4 place-items-center border-[1.5px] border-ink-2 text-white",
-                        on ? "bg-ink-2" : "bg-white",
-                      )}
-                    >
-                      {on && (
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 10 10"
-                          fill="none"
-                        >
-                          <path
-                            d="M1 5l3 3 5-7"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                    {t(`calc.${k}`)}
-                  </label>
-                );
-              })}
+          {/* ========================= RIGHT: preview + price + CTA */}
+          <div className="mx-auto w-full max-w-[420px] border border-[#ECECEC] bg-white px-4 py-5 sm:px-[22px] sm:py-7 lg:sticky lg:top-[120px] lg:mx-0 lg:max-w-none">
+            <WindowPreview
+              imageSrc={variant.image}
+              width={state.width}
+              height={state.height}
+              alt={variantName}
+              narrow={state.frame.startsWith("door-")}
+            />
+            <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
+              {variantName}
             </div>
 
-            <div className="mt-3 border-t border-[#EEE] pt-3 text-[13px]">
-              <span className="text-[#888]">{t("calc.estimate")}: </span>
-              <b className="text-ink-2">
+            {/* Compact summary of the current configuration */}
+            <dl className="mt-4 space-y-1.5 border-t border-[#EEE] pt-3 text-[12px]">
+              <SummaryRow
+                k={t("calc.profileSerial")}
+                v={serial?.name ?? "—"}
+              />
+              <SummaryRow
+                k={t("calc.lamination")}
+                v={COLOR_SWATCHES[state.lamination]?.name ?? "—"}
+              />
+              {currentFitting && (
+                <SummaryRow k={t("calc.fittings")} v={currentFitting.name} />
+              )}
+              <SummaryRow
+                k={t("calc.glass")}
+                v={t(`glass.names.${state.glass}`)}
+              />
+              <SummaryRow
+                k={t("calc.sizesTitle")}
+                v={`${state.width} × ${state.height} мм • ${state.quantity} шт`}
+              />
+            </dl>
+
+            <div className="mt-3 flex items-baseline justify-between border-t border-[#EEE] pt-3">
+              <span className="text-[12px] text-[#888]">
+                {t("calc.estimate")}
+              </span>
+              <b className="text-[17px] text-ink-2">
                 {formatPrice(price, i18n.language)} UZS
               </b>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3">
-              {step > 0 && !submitted ? (
-                <button
-                  type="button"
-                  onClick={() => setStep((s) => Math.max(0, s - 1))}
-                  className="text-[12px] font-semibold text-[#888] hover:text-ink-2"
-                >
-                  ← {t("calc.back")}
-                </button>
-              ) : (
-                <span className="text-[12px] text-[#888]">
-                  {t("calc.sendMessenger")}
-                </span>
-              )}
-              {!submitted && (
-                <button
-                  type="button"
-                  onClick={advance}
-                  className="bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
-                >
-                  {isLast ? t("calc.getResult") : t("calc.next")}
-                </button>
-              )}
-            </div>
+            {!submitted && (
+              <button
+                type="button"
+                onClick={submit}
+                className="mt-4 w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
+              >
+                {t("calc.submit")}
+              </button>
+            )}
+            <p className="mt-2 text-center text-[11px] text-[#999]">
+              {t("calc.estimateNote")}
+            </p>
           </div>
         </div>
       </div>
@@ -618,3 +666,11 @@ export function Calculator() {
   );
 }
 
+function SummaryRow({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-[#888]">{k}</dt>
+      <dd className="m-0 truncate text-right font-semibold text-ink-2">{v}</dd>
+    </div>
+  );
+}
