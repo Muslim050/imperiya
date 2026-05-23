@@ -7,7 +7,6 @@ import { WindowPreview } from "./WindowPreview";
 import { FRAME_PICTO } from "./shapes";
 import {
   PRODUCTS,
-  MATERIAL_TYPES,
   COMPONENTS,
   VARIANTS,
   DEFAULT_VARIANT,
@@ -16,20 +15,24 @@ import {
   GLASS_OPTIONS,
   SERIAL_CATALOG,
   COLOR_SWATCHES,
-  getSerials,
+  MAX_ITEMS,
+  defaultProductConfig,
+  estimateItem,
+  estimateTotal,
   findSerial,
   findVariant,
   getMaterialTypesFor,
+  getSerials,
   initialCalcState,
-  estimatePrice,
+  itemLabel,
   type CalcState,
-  type Product,
-  type MaterialType,
-  type Frame,
   type ComponentKey,
+  type Frame,
+  type MaterialType,
+  type Product,
+  type ProductConfig,
 } from "@/data/calculator";
 
-/* Tiny visual primitives shared across sections */
 const SECTION_TITLE =
   "m-0 mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-2";
 
@@ -83,33 +86,61 @@ export function Calculator() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
 
-  const price = useMemo(() => estimatePrice(state), [state]);
-  const set = <K extends keyof CalcState>(k: K, v: CalcState[K]) =>
+  /* ------------------------- active item shortcuts ------------------ */
+  const item = state.items[state.activeIndex] ?? state.items[0];
+  const total = useMemo(() => estimateTotal(state), [state]);
+  const itemPrice = useMemo(() => estimateItem(item), [item]);
+
+  const productNames: Record<Product, string> = {
+    window: t("calc.products.window"),
+    door: t("calc.products.door"),
+  };
+
+  /* Generic mutators */
+  function patchActive(patch: Partial<ProductConfig>) {
+    setState((s) => ({
+      ...s,
+      items: s.items.map((c, i) =>
+        i === s.activeIndex ? { ...c, ...patch } : c,
+      ),
+    }));
+  }
+  function setActive(idx: number) {
+    setState((s) => ({ ...s, activeIndex: idx }));
+  }
+  function setContact<K extends "name" | "phone" | "email" | "address" | "comment">(
+    k: K,
+    v: string,
+  ) {
     setState((s) => ({ ...s, [k]: v }));
+  }
 
-  /* ---------------- product / type / serial coherence ---------------- */
-  const materialTypes = getMaterialTypesFor(state.product);
-  const serials = getSerials(state.product, state.materialType);
-  const serial =
-    findSerial(state.product, state.materialType, state.serial) ?? serials[0];
-  const variant = findVariant(state.variantId) ?? VARIANTS.double[0];
-  const variantName = variant.name[lang] ?? variant.name.ru;
-  const availableFrames = FRAMES_BY_PRODUCT[state.product];
-  const limits = FRAME_SIZE_LIMITS[state.frame];
-
-  /** When the user switches product, lock the rest of the state to a
-   * coherent default: pick the first available material → first serial →
-   * its first lamination / fitting, and reset frame/variant to that
-   * product's first viable pair. */
-  function setProduct(p: Product) {
+  /* Cart ops */
+  function addItem(productHint: Product = "window") {
     setState((s) => {
+      if (s.items.length >= MAX_ITEMS) return s;
+      const fresh = defaultProductConfig({ product: productHint });
+      return { ...s, items: [...s.items, fresh], activeIndex: s.items.length };
+    });
+  }
+  function removeItem(idx: number) {
+    setState((s) => {
+      if (s.items.length <= 1) return s; // never empty the cart
+      const items = s.items.filter((_, i) => i !== idx);
+      const activeIndex = Math.min(s.activeIndex, items.length - 1);
+      return { ...s, items, activeIndex };
+    });
+  }
+
+  /* Coherence helpers (rebuild dependent fields on parent changes) */
+  function changeProduct(p: Product) {
+    patchActiveWithCoherence((c) => {
       const mts = getMaterialTypesFor(p);
-      const mt = mts.includes(s.materialType) ? s.materialType : mts[0];
+      const mt = mts.includes(c.materialType) ? c.materialType : mts[0];
       const ser = SERIAL_CATALOG[p][mt]?.[0];
       const frames = FRAMES_BY_PRODUCT[p];
-      const f = frames.includes(s.frame) ? s.frame : frames[0];
+      const f = frames.includes(c.frame) ? c.frame : frames[0];
       return {
-        ...s,
         product: p,
         materialType: mt,
         serial: ser?.id ?? "",
@@ -121,12 +152,10 @@ export function Calculator() {
       };
     });
   }
-
-  function setMaterialType(mt: MaterialType) {
-    setState((s) => {
-      const ser = SERIAL_CATALOG[s.product][mt]?.[0];
+  function changeMaterial(mt: MaterialType) {
+    patchActiveWithCoherence((c) => {
+      const ser = SERIAL_CATALOG[c.product][mt]?.[0];
       return {
-        ...s,
         materialType: mt,
         serial: ser?.id ?? "",
         lamination: ser?.lamination[1] ?? ser?.lamination[0] ?? "",
@@ -135,12 +164,10 @@ export function Calculator() {
       };
     });
   }
-
-  function setSerial(id: string) {
-    setState((s) => {
-      const ser = findSerial(s.product, s.materialType, id);
+  function changeSerial(id: string) {
+    patchActiveWithCoherence((c) => {
+      const ser = findSerial(c.product, c.materialType, id);
       return {
-        ...s,
         serial: id,
         lamination: ser?.lamination[1] ?? ser?.lamination[0] ?? "",
         fittingBrand: ser?.fittings[0]?.id ?? "",
@@ -148,46 +175,46 @@ export function Calculator() {
       };
     });
   }
-
-  function setFrame(f: Frame) {
-    setState((s) => ({ ...s, frame: f, variantId: DEFAULT_VARIANT[f] }));
+  function changeFrame(f: Frame) {
+    patchActive({ frame: f, variantId: DEFAULT_VARIANT[f] });
   }
-
-  function setFitting(brandId: string) {
-    setState((s) => {
-      const b = serial?.fittings.find((x) => x.id === brandId);
-      return {
-        ...s,
-        fittingBrand: brandId,
-        fittingColor: b?.colors[0] ?? "",
-      };
+  function changeFitting(brandId: string) {
+    const serial = findSerial(item.product, item.materialType, item.serial);
+    const b = serial?.fittings.find((x) => x.id === brandId);
+    patchActive({ fittingBrand: brandId, fittingColor: b?.colors[0] ?? "" });
+  }
+  function changeComponent(k: ComponentKey, patch: Partial<{ enabled: boolean; width: number }>) {
+    patchActive({
+      components: { ...item.components, [k]: { ...item.components[k], ...patch } },
     });
   }
 
-  function setComponent(k: ComponentKey, patch: Partial<{ enabled: boolean; width: number }>) {
+  function patchActiveWithCoherence(
+    fn: (c: ProductConfig) => Partial<ProductConfig>,
+  ) {
     setState((s) => ({
       ...s,
-      components: { ...s.components, [k]: { ...s.components[k], ...patch } },
+      items: s.items.map((c, i) =>
+        i === s.activeIndex ? { ...c, ...fn(c) } : c,
+      ),
     }));
   }
 
-  /* Keep components.width in sync with the main window width by default
-   * until the user types something different. */
+  /* Sync component widths with master width while disabled */
   useEffect(() => {
     setState((s) => ({
       ...s,
-      components: Object.fromEntries(
-        COMPONENTS.map((k) => [
-          k,
-          s.components[k].enabled
-            ? s.components[k]
-            : { ...s.components[k], width: s.width },
-        ]),
-      ) as CalcState["components"],
+      items: s.items.map((c, i) => {
+        if (i !== s.activeIndex) return c;
+        const next: ProductConfig["components"] = { ...c.components };
+        for (const k of COMPONENTS) {
+          if (!next[k].enabled) next[k] = { ...next[k], width: c.width };
+        }
+        return { ...c, components: next };
+      }),
     }));
-    // only when the master width changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.width]);
+  }, [item.width, state.activeIndex]);
 
   function submit() {
     if (!state.name.trim() || !state.phone.trim()) {
@@ -197,7 +224,18 @@ export function Calculator() {
     setSubmitted(true);
   }
 
-  const currentFitting = serial?.fittings.find((f) => f.id === state.fittingBrand);
+  /* Derivations off the active item */
+  const materialTypes = getMaterialTypesFor(item.product);
+  const serials = getSerials(item.product, item.materialType);
+  const serial =
+    findSerial(item.product, item.materialType, item.serial) ?? serials[0];
+  const variant = findVariant(item.variantId) ?? VARIANTS.double[0];
+  const variantName = variant.name[lang] ?? variant.name.ru;
+  const availableFrames = FRAMES_BY_PRODUCT[item.product];
+  const limits = FRAME_SIZE_LIMITS[item.frame];
+  const currentFitting = serial?.fittings.find((f) => f.id === item.fittingBrand);
+  const canAdd = state.items.length < MAX_ITEMS;
+  const canRemove = state.items.length > 1;
 
   return (
     <section id="calculator" className="scroll-mt-40 bg-bg py-10 sm:py-[38px]">
@@ -211,7 +249,7 @@ export function Calculator() {
 
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
           {/* ============================== LEFT: configurator ===== */}
-          <div className="mx-auto w-full max-w-[760px] space-y-5 border border-[#ECECEC] bg-white p-4 sm:p-6 lg:mx-0 lg:max-w-none">
+          <div className="mx-auto w-full max-w-[760px] border border-[#ECECEC] bg-white p-4 sm:p-6 lg:mx-0 lg:max-w-none">
             {submitted ? (
               <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
                 <span className="grid size-14 place-items-center rounded-full bg-[#FFF6EB] text-orange">
@@ -222,455 +260,540 @@ export function Calculator() {
                 <p className="mt-4 max-w-sm text-base font-semibold text-ink-2">
                   {t("calc.success")}
                 </p>
+                <p className="mt-2 text-[12px] text-[#888]">
+                  {t("calc.successItems", { count: state.items.length })}
+                </p>
               </div>
             ) : (
               <>
-                {/* ---- product tabs (Окно / Дверь) ---- */}
-                <div className="flex gap-2">
-                  {PRODUCTS.map((p) => {
-                    const on = state.product === p;
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setProduct(p)}
-                        className={cn(
-                          "flex-1 border px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors",
-                          on
-                            ? "border-orange bg-orange text-white"
-                            : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
-                        )}
-                      >
-                        {t(`calc.products.${p}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* ---- material type (ПВХ / Алюминий) ---- */}
-                {materialTypes.length > 1 && (
-                  <Section title={t("calc.material")}>
-                    <div className="flex gap-2">
-                      {materialTypes.map((mt) => {
-                        const on = state.materialType === mt;
-                        return (
-                          <button
-                            key={mt}
-                            type="button"
-                            onClick={() => setMaterialType(mt)}
-                            className={cn(
-                              "border px-4 py-2.5 text-[13px] font-semibold transition-colors",
-                              on
-                                ? "border-ink-2 bg-ink-2 text-white"
-                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
-                            )}
-                          >
-                            {t(`calc.materials.${mt}`)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Section>
-                )}
-
-                {/* ---- serial ---- */}
-                {serials.length > 0 && (
-                  <Section title={t("calc.profileSerial")}>
-                    <div className="flex flex-wrap gap-2">
-                      {serials.map((s) => {
-                        const on = state.serial === s.id;
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setSerial(s.id)}
-                            className={cn(
-                              "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
-                              on
-                                ? "border-orange bg-[#FFF6EB] text-[#111]"
-                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
-                            )}
-                          >
-                            {s.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Section>
-                )}
-
-                {/* ---- frame (sash count) ---- */}
-                <Section title={t("calc.frame")}>
-                  <div className="flex flex-wrap gap-2">
-                    {availableFrames.map((f) => {
-                      const on = state.frame === f;
-                      return (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => setFrame(f)}
-                          className={cn(
-                            "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
-                            on
-                              ? "border-orange bg-[#FFF6EB] text-[#111]"
-                              : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
-                          )}
-                        >
-                          <span className={on ? "text-orange" : "text-[#666]"}>
-                            {FRAME_PICTO[f]}
-                          </span>
-                          {t(`calc.frames.${f}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Section>
-
-                {/* ---- opening variant ---- */}
-                <Section title={t("calc.opening")}>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    {VARIANTS[state.frame].map((v) => {
-                      const on = state.variantId === v.id;
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => set("variantId", v.id)}
-                          title={v.name[lang] ?? v.name.ru}
-                          className={cn(
-                            "flex flex-col items-center gap-1.5 border bg-white p-2 text-center transition-colors",
-                            on
-                              ? "border-orange ring-1 ring-orange/40"
-                              : "border-[#EFEFEF] hover:border-[#cfcfcf]",
-                          )}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={v.scheme}
-                            alt=""
-                            width={46}
-                            height={60}
-                            loading="lazy"
-                            decoding="async"
-                            className="block h-[60px] w-auto object-contain"
-                          />
-                          <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-[#444]">
-                            {v.name[lang] ?? v.name.ru}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Section>
-
-                {/* ---- sizes (plain number inputs — client's explicit ask) ---- */}
-                <Section title={t("calc.sizesTitle")}>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {(
-                      [
-                        ["width", t("calc.width"), limits.minW, limits.maxW],
-                        ["height", t("calc.height"), limits.minH, limits.maxH],
-                        ["quantity", t("calc.quantity"), 1, 100],
-                      ] as const
-                    ).map(([k, label, min, max]) => (
-                      <label key={k} className="block">
-                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                          {label}{" "}
-                          {k !== "quantity" && (
-                            <span className="text-[#aaa]">
-                              ({min}–{max} мм)
-                            </span>
-                          )}
-                        </span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={min}
-                          max={max}
-                          value={state[k]}
-                          onChange={(e) => set(k, Number(e.target.value))}
-                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </Section>
-
-                {/* ---- glass ---- */}
-                <Section title={t("calc.glass")}>
-                  <select
-                    value={state.glass}
-                    onChange={(e) => set("glass", e.target.value as CalcState["glass"])}
-                    className="h-[44px] w-full appearance-none border border-[#DDD] bg-white px-3.5 text-[13px] font-medium text-[#222] outline-none focus:border-orange"
-                  >
-                    {GLASS_OPTIONS.map((g) => (
-                      <option key={g} value={g}>
-                        {t(`glass.names.${g}`)}
-                      </option>
-                    ))}
-                  </select>
-                </Section>
-
-                {/* ---- lamination ---- */}
-                {serial && serial.lamination.length > 0 && (
-                  <Section title={t("calc.lamination")}>
-                    <div className="flex flex-wrap gap-2">
-                      {serial.lamination.map((c) => (
-                        <ColorSwatchButton
-                          key={c}
-                          id={c}
-                          on={state.lamination === c}
-                          onClick={() => set("lamination", c)}
-                        />
-                      ))}
-                    </div>
-                    {COLOR_SWATCHES[state.lamination] && (
-                      <p className="mt-2 text-[11px] text-[#888]">
-                        {COLOR_SWATCHES[state.lamination].name}
-                      </p>
-                    )}
-                  </Section>
-                )}
-
-                {/* ---- fittings (brand + brand colors) ---- */}
-                {serial && serial.fittings.length > 0 && (
-                  <Section title={t("calc.fittings")}>
-                    <div className="mb-2 flex flex-wrap gap-2">
-                      {serial.fittings.map((b) => {
-                        const on = state.fittingBrand === b.id;
-                        return (
-                          <button
-                            key={b.id}
-                            type="button"
-                            onClick={() => setFitting(b.id)}
-                            className={cn(
-                              "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
-                              on
-                                ? "border-orange bg-[#FFF6EB] text-[#111]"
-                                : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
-                            )}
-                          >
-                            {b.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {currentFitting && currentFitting.colors.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {currentFitting.colors.map((c) => (
-                          <ColorSwatchButton
-                            key={c}
-                            id={c}
-                            on={state.fittingColor === c}
-                            onClick={() => set("fittingColor", c)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </Section>
-                )}
-
-                {/* ---- components (sill / mosquito / ebb) with own width ---- */}
-                <Section title={t("calc.components")}>
-                  <div className="space-y-2">
-                    {COMPONENTS.map((k) => {
-                      const c = state.components[k];
+                {/* ---- ITEM TABS (multi-config strip) ---- */}
+                <div className="-mx-4 mb-5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max items-center gap-2">
+                    {state.items.map((it, i) => {
+                      const on = i === state.activeIndex;
+                      const label = itemLabel(state.items, i, productNames);
                       return (
                         <div
-                          key={k}
+                          key={it.id}
                           className={cn(
-                            "flex items-center gap-3 border px-3 py-2.5 transition-colors",
-                            c.enabled
+                            "group/tab flex items-stretch border transition-colors",
+                            on
                               ? "border-orange bg-[#FFF6EB]"
-                              : "border-[#EFEFEF] hover:border-[#cfcfcf]",
+                              : "border-[#E4E4E4] bg-white hover:border-[#bdbdbd]",
                           )}
                         >
-                          <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#222]">
-                            <span
-                              className={cn(
-                                "grid size-4 place-items-center border-[1.5px]",
-                                c.enabled
-                                  ? "border-ink-2 bg-ink-2 text-white"
-                                  : "border-[#1a1a1a] bg-white",
-                              )}
+                          <button
+                            type="button"
+                            onClick={() => setActive(i)}
+                            className={cn(
+                              "px-3 py-2 text-[12px] font-bold uppercase tracking-[0.04em]",
+                              on ? "text-[#111]" : "text-[#666]",
+                            )}
+                          >
+                            {label}
+                          </button>
+                          {canRemove && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(i)}
+                              aria-label={t("calc.removeItem")}
+                              title={t("calc.removeItem")}
+                              className="px-2 text-[#bbb] transition-colors hover:text-orange"
                             >
-                              {c.enabled && (
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                  <path d="M1 5l3 3 5-7" stroke="currentColor" strokeWidth="1.6" />
-                                </svg>
-                              )}
-                            </span>
-                            <input
-                              type="checkbox"
-                              checked={c.enabled}
-                              onChange={(e) => setComponent(k, { enabled: e.target.checked })}
-                              className="sr-only"
-                            />
-                            {t(`calc.componentNames.${k}`)}
-                          </label>
-                          {c.enabled && (
-                            <label className="flex items-center gap-2 text-[11px] text-[#666]">
-                              {t("calc.widthMm")}
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min={300}
-                                max={4000}
-                                value={c.width}
-                                onChange={(e) => setComponent(k, { width: Number(e.target.value) })}
-                                className="h-8 w-[90px] border border-[#DDD] bg-white px-2 text-[13px] font-semibold text-[#222] outline-none focus:border-orange"
-                              />
-                            </label>
+                              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                                <path d="M2 2l7 7M9 2l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                              </svg>
+                            </button>
                           )}
                         </div>
                       );
                     })}
+                    {canAdd && (
+                      <button
+                        type="button"
+                        onClick={() => addItem(item.product)}
+                        className="flex items-center gap-1.5 border border-dashed border-[#cfcfcf] px-3 py-2 text-[12px] font-bold uppercase tracking-[0.04em] text-[#666] transition-colors hover:border-orange hover:text-orange"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                          <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                        </svg>
+                        {t("calc.addAnother")}
+                      </button>
+                    )}
                   </div>
-                </Section>
+                </div>
 
-                {/* ---- contacts ---- */}
-                <Section title={t("calc.steps.contacts")}>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                        {t("calc.name")} *
-                      </span>
-                      <input
-                        value={state.name}
-                        onChange={(e) => set("name", e.target.value)}
-                        className={cn(
-                          "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                          error && !state.name.trim() ? "border-orange" : "border-[#DDD]",
-                        )}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                        {t("calc.phone")} *
-                      </span>
-                      <input
-                        value={state.phone}
-                        inputMode="tel"
-                        placeholder="+998"
-                        onChange={(e) => set("phone", e.target.value)}
-                        className={cn(
-                          "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                          error && !state.phone.trim() ? "border-orange" : "border-[#DDD]",
-                        )}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                        Email
-                      </span>
-                      <input
-                        type="email"
-                        value={state.email}
-                        onChange={(e) => set("email", e.target.value)}
-                        className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                        {t("calc.address")}
-                      </span>
-                      <input
-                        value={state.address}
-                        onChange={(e) => set("address", e.target.value)}
-                        className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
-                      />
-                    </label>
+                <div className="space-y-5">
+                  {/* ---- product tabs ---- */}
+                  <div className="flex gap-2">
+                    {PRODUCTS.map((p) => {
+                      const on = item.product === p;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => changeProduct(p)}
+                          className={cn(
+                            "flex-1 border px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors",
+                            on
+                              ? "border-orange bg-orange text-white"
+                              : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                          )}
+                        >
+                          {t(`calc.products.${p}`)}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <label className="mt-3 block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
-                      {t("calc.comment")}
-                    </span>
-                    <textarea
-                      value={state.comment}
-                      onChange={(e) => set("comment", e.target.value)}
-                      rows={3}
-                      className="w-full border border-[#DDD] bg-white px-3.5 py-3 text-[14px] outline-none focus:border-orange"
-                    />
-                  </label>
-                  {error && (
-                    <p className="mt-2 text-[13px] font-medium text-orange">
-                      {t("calc.required")}
-                    </p>
+
+                  {materialTypes.length > 1 && (
+                    <Section title={t("calc.material")}>
+                      <div className="flex gap-2">
+                        {materialTypes.map((mt) => {
+                          const on = item.materialType === mt;
+                          return (
+                            <button
+                              key={mt}
+                              type="button"
+                              onClick={() => changeMaterial(mt)}
+                              className={cn(
+                                "border px-4 py-2.5 text-[13px] font-semibold transition-colors",
+                                on
+                                  ? "border-ink-2 bg-ink-2 text-white"
+                                  : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                              )}
+                            >
+                              {t(`calc.materials.${mt}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Section>
                   )}
-                </Section>
+
+                  {serials.length > 0 && (
+                    <Section title={t("calc.profileSerial")}>
+                      <div className="flex flex-wrap gap-2">
+                        {serials.map((s) => {
+                          const on = item.serial === s.id;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => changeSerial(s.id)}
+                              className={cn(
+                                "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                                on
+                                  ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                  : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                              )}
+                            >
+                              {s.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Section>
+                  )}
+
+                  <Section title={t("calc.frame")}>
+                    <div className="flex flex-wrap gap-2">
+                      {availableFrames.map((f) => {
+                        const on = item.frame === f;
+                        return (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => changeFrame(f)}
+                            className={cn(
+                              "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
+                              on
+                                ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
+                            )}
+                          >
+                            <span className={on ? "text-orange" : "text-[#666]"}>
+                              {FRAME_PICTO[f]}
+                            </span>
+                            {t(`calc.frames.${f}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Section>
+
+                  <Section title={t("calc.opening")}>
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                      {VARIANTS[item.frame].map((v) => {
+                        const on = item.variantId === v.id;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => patchActive({ variantId: v.id })}
+                            title={v.name[lang] ?? v.name.ru}
+                            className={cn(
+                              "flex flex-col items-center gap-1.5 border bg-white p-2 text-center transition-colors",
+                              on
+                                ? "border-orange ring-1 ring-orange/40"
+                                : "border-[#EFEFEF] hover:border-[#cfcfcf]",
+                            )}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={v.scheme}
+                              alt=""
+                              width={46}
+                              height={60}
+                              loading="lazy"
+                              decoding="async"
+                              className="block h-[60px] w-auto object-contain"
+                            />
+                            <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-[#444]">
+                              {v.name[lang] ?? v.name.ru}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Section>
+
+                  <Section title={t("calc.sizesTitle")}>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {(
+                        [
+                          ["width", t("calc.width"), limits.minW, limits.maxW],
+                          ["height", t("calc.height"), limits.minH, limits.maxH],
+                          ["quantity", t("calc.quantity"), 1, 100],
+                        ] as const
+                      ).map(([k, label, min, max]) => (
+                        <label key={k} className="block">
+                          <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                            {label}{" "}
+                            {k !== "quantity" && (
+                              <span className="text-[#aaa]">
+                                ({min}–{max} мм)
+                              </span>
+                            )}
+                          </span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={min}
+                            max={max}
+                            value={item[k]}
+                            onChange={(e) =>
+                              patchActive({ [k]: Number(e.target.value) } as Partial<ProductConfig>)
+                            }
+                            className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </Section>
+
+                  <Section title={t("calc.glass")}>
+                    <select
+                      value={item.glass}
+                      onChange={(e) =>
+                        patchActive({ glass: e.target.value as ProductConfig["glass"] })
+                      }
+                      className="h-[44px] w-full appearance-none border border-[#DDD] bg-white px-3.5 text-[13px] font-medium text-[#222] outline-none focus:border-orange"
+                    >
+                      {GLASS_OPTIONS.map((g) => (
+                        <option key={g} value={g}>
+                          {t(`glass.names.${g}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </Section>
+
+                  {serial && serial.lamination.length > 0 && (
+                    <Section title={t("calc.lamination")}>
+                      <div className="flex flex-wrap gap-2">
+                        {serial.lamination.map((c) => (
+                          <ColorSwatchButton
+                            key={c}
+                            id={c}
+                            on={item.lamination === c}
+                            onClick={() => patchActive({ lamination: c })}
+                          />
+                        ))}
+                      </div>
+                      {COLOR_SWATCHES[item.lamination] && (
+                        <p className="mt-2 text-[11px] text-[#888]">
+                          {COLOR_SWATCHES[item.lamination].name}
+                        </p>
+                      )}
+                    </Section>
+                  )}
+
+                  {serial && serial.fittings.length > 0 && (
+                    <Section title={t("calc.fittings")}>
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        {serial.fittings.map((b) => {
+                          const on = item.fittingBrand === b.id;
+                          return (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => changeFitting(b.id)}
+                              className={cn(
+                                "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                                on
+                                  ? "border-orange bg-[#FFF6EB] text-[#111]"
+                                  : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
+                              )}
+                            >
+                              {b.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {currentFitting && currentFitting.colors.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {currentFitting.colors.map((c) => (
+                            <ColorSwatchButton
+                              key={c}
+                              id={c}
+                              on={item.fittingColor === c}
+                              onClick={() => patchActive({ fittingColor: c })}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </Section>
+                  )}
+
+                  <Section title={t("calc.components")}>
+                    <div className="space-y-2">
+                      {COMPONENTS.map((k) => {
+                        const c = item.components[k];
+                        return (
+                          <div
+                            key={k}
+                            className={cn(
+                              "flex items-center gap-3 border px-3 py-2.5 transition-colors",
+                              c.enabled
+                                ? "border-orange bg-[#FFF6EB]"
+                                : "border-[#EFEFEF] hover:border-[#cfcfcf]",
+                            )}
+                          >
+                            <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#222]">
+                              <span
+                                className={cn(
+                                  "grid size-4 place-items-center border-[1.5px]",
+                                  c.enabled
+                                    ? "border-ink-2 bg-ink-2 text-white"
+                                    : "border-[#1a1a1a] bg-white",
+                                )}
+                              >
+                                {c.enabled && (
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                    <path d="M1 5l3 3 5-7" stroke="currentColor" strokeWidth="1.6" />
+                                  </svg>
+                                )}
+                              </span>
+                              <input
+                                type="checkbox"
+                                checked={c.enabled}
+                                onChange={(e) => changeComponent(k, { enabled: e.target.checked })}
+                                className="sr-only"
+                              />
+                              {t(`calc.componentNames.${k}`)}
+                            </label>
+                            {c.enabled && (
+                              <label className="flex items-center gap-2 text-[11px] text-[#666]">
+                                {t("calc.widthMm")}
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={300}
+                                  max={4000}
+                                  value={c.width}
+                                  onChange={(e) =>
+                                    changeComponent(k, { width: Number(e.target.value) })
+                                  }
+                                  className="h-8 w-[90px] border border-[#DDD] bg-white px-2 text-[13px] font-semibold text-[#222] outline-none focus:border-orange"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Section>
+
+                  <Section title={t("calc.steps.contacts")}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          {t("calc.name")} *
+                        </span>
+                        <input
+                          value={state.name}
+                          onChange={(e) => setContact("name", e.target.value)}
+                          className={cn(
+                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            error && !state.name.trim() ? "border-orange" : "border-[#DDD]",
+                          )}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          {t("calc.phone")} *
+                        </span>
+                        <input
+                          value={state.phone}
+                          inputMode="tel"
+                          placeholder="+998"
+                          onChange={(e) => setContact("phone", e.target.value)}
+                          className={cn(
+                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            error && !state.phone.trim() ? "border-orange" : "border-[#DDD]",
+                          )}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          Email
+                        </span>
+                        <input
+                          type="email"
+                          value={state.email}
+                          onChange={(e) => setContact("email", e.target.value)}
+                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          {t("calc.address")}
+                        </span>
+                        <input
+                          value={state.address}
+                          onChange={(e) => setContact("address", e.target.value)}
+                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                        />
+                      </label>
+                    </div>
+                    <label className="mt-3 block">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                        {t("calc.comment")}
+                      </span>
+                      <textarea
+                        value={state.comment}
+                        onChange={(e) => setContact("comment", e.target.value)}
+                        rows={3}
+                        className="w-full border border-[#DDD] bg-white px-3.5 py-3 text-[14px] outline-none focus:border-orange"
+                      />
+                    </label>
+                    {error && (
+                      <p className="mt-2 text-[13px] font-medium text-orange">
+                        {t("calc.required")}
+                      </p>
+                    )}
+                  </Section>
+                </div>
               </>
             )}
           </div>
 
-          {/* ========================= RIGHT: preview + price + CTA */}
+          {/* ========================= RIGHT: preview + cart + CTA */}
           <div className="mx-auto w-full max-w-[420px] border border-[#ECECEC] bg-white px-4 py-5 sm:px-[22px] sm:py-7 lg:sticky lg:top-[120px] lg:mx-0 lg:max-w-none">
-            <WindowPreview
-              imageSrc={variant.image}
-              width={state.width}
-              height={state.height}
-              alt={variantName}
-              narrow={state.frame.startsWith("door-")}
-            />
-            <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
-              {variantName}
-            </div>
-
-            {/* Compact summary of the current configuration */}
-            <dl className="mt-4 space-y-1.5 border-t border-[#EEE] pt-3 text-[12px]">
-              <SummaryRow
-                k={t("calc.profileSerial")}
-                v={serial?.name ?? "—"}
-              />
-              <SummaryRow
-                k={t("calc.lamination")}
-                v={COLOR_SWATCHES[state.lamination]?.name ?? "—"}
-              />
-              {currentFitting && (
-                <SummaryRow k={t("calc.fittings")} v={currentFitting.name} />
-              )}
-              <SummaryRow
-                k={t("calc.glass")}
-                v={t(`glass.names.${state.glass}`)}
-              />
-              <SummaryRow
-                k={t("calc.sizesTitle")}
-                v={`${state.width} × ${state.height} мм • ${state.quantity} шт`}
-              />
-            </dl>
-
-            <div className="mt-3 flex items-baseline justify-between border-t border-[#EEE] pt-3">
-              <span className="text-[12px] text-[#888]">
-                {t("calc.estimate")}
-              </span>
-              <b className="text-[17px] text-ink-2">
-                {formatPrice(price, i18n.language)} UZS
-              </b>
-            </div>
-
             {!submitted && (
-              <button
-                type="button"
-                onClick={submit}
-                className="mt-4 w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
-              >
-                {t("calc.submit")}
-              </button>
+              <>
+                <WindowPreview
+                  imageSrc={variant.image}
+                  width={item.width}
+                  height={item.height}
+                  alt={variantName}
+                  narrow={item.frame.startsWith("door-")}
+                />
+                <div className="mt-2 text-center text-[12px] font-semibold text-[#555]">
+                  {variantName}
+                </div>
+
+                {/* Cart list — each line is clickable to switch the active item */}
+                <div className="mt-4 border-t border-[#EEE] pt-3">
+                  <div className="mb-2 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-2">
+                    <span>{t("calc.cart")}</span>
+                    <span className="text-[10px] font-medium text-[#999]">
+                      {state.items.length} / {MAX_ITEMS}
+                    </span>
+                  </div>
+                  <ul className="m-0 space-y-1.5">
+                    {state.items.map((it, i) => {
+                      const on = i === state.activeIndex;
+                      return (
+                        <li key={it.id}>
+                          <button
+                            type="button"
+                            onClick={() => setActive(i)}
+                            className={cn(
+                              "flex w-full items-baseline justify-between gap-2 border px-2.5 py-2 text-left text-[12px] transition-colors",
+                              on
+                                ? "border-orange bg-[#FFF6EB]"
+                                : "border-[#ECECEC] bg-white hover:border-[#cfcfcf]",
+                            )}
+                          >
+                            <span className="min-w-0 truncate font-semibold text-ink-2">
+                              {itemLabel(state.items, i, productNames)}
+                              <span className="ml-1.5 text-[10px] font-normal text-[#888]">
+                                {it.width}×{it.height} · {it.quantity}шт
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-bold text-ink-2">
+                              {formatPrice(estimateItem(it), i18n.language)}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {canAdd && (
+                    <button
+                      type="button"
+                      onClick={() => addItem(item.product)}
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 border border-dashed border-[#cfcfcf] py-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[#666] transition-colors hover:border-orange hover:text-orange"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
+                        <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                      </svg>
+                      {t("calc.addAnother")}
+                    </button>
+                  )}
+                </div>
+
+                {/* Total */}
+                <div className="mt-3 flex items-baseline justify-between border-t border-[#EEE] pt-3">
+                  <span className="text-[12px] text-[#888]">
+                    {t("calc.totalPrice")}
+                  </span>
+                  <b className="text-[18px] text-ink-2">
+                    {formatPrice(total, i18n.language)} UZS
+                  </b>
+                </div>
+                {state.items.length > 1 && (
+                  <div className="mt-1 text-right text-[11px] text-[#888]">
+                    {t("calc.currentItem")}: {formatPrice(itemPrice, i18n.language)} UZS
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={submit}
+                  className="mt-4 w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
+                >
+                  {t("calc.submit")}
+                </button>
+                <p className="mt-2 text-center text-[11px] text-[#999]">
+                  {t("calc.estimateNote")}
+                </p>
+              </>
             )}
-            <p className="mt-2 text-center text-[11px] text-[#999]">
-              {t("calc.estimateNote")}
-            </p>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function SummaryRow({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-[#888]">{k}</dt>
-      <dd className="m-0 truncate text-right font-semibold text-ink-2">{v}</dd>
-    </div>
   );
 }

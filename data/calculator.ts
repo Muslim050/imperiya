@@ -324,7 +324,9 @@ const COMPONENT_PRICE_PER_M: Record<ComponentKey, number> = {
 };
 
 /* -------------------------------------------------- state */
-export interface CalcState {
+/** A single item in the multi-config cart — one configured window/door. */
+export interface ProductConfig {
+  id: string;
   product: Product;
   materialType: MaterialType;
   serial: string;
@@ -338,6 +340,14 @@ export interface CalcState {
   height: number;
   quantity: number;
   components: Record<ComponentKey, ComponentState>;
+}
+
+export interface CalcState {
+  /** All configured items in the cart. Always has at least one entry. */
+  items: ProductConfig[];
+  /** Index into `items` of the item currently shown in the editor. */
+  activeIndex: number;
+  /** Shared contact form — one set of contacts per request. */
   name: string;
   phone: string;
   email: string;
@@ -345,25 +355,54 @@ export interface CalcState {
   comment: string;
 }
 
-const initialSerial = SERIAL_CATALOG.window.pvc![2]; // Engelberg 70 — has the broadest options
+/** Hard cap mirroring imzo (max 20 items per request). */
+export const MAX_ITEMS = 20;
+
+/** Generates a stable id for a fresh cart item. */
+function newItemId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID().slice(0, 8);
+  }
+  return Math.random().toString(36).slice(2, 10);
+}
+
+const initialSerial = SERIAL_CATALOG.window.pvc![2]; // Engelberg 70
+
+/** Factory for a fresh configurator item. */
+export function defaultProductConfig(
+  overrides: Partial<ProductConfig> = {},
+): ProductConfig {
+  const ser = overrides.product === "door"
+    ? SERIAL_CATALOG.door.aluminum![0]
+    : initialSerial;
+  const frame: Frame =
+    overrides.frame ?? (overrides.product === "door" ? "door-single" : "double");
+  return {
+    id: newItemId(),
+    product: "window",
+    materialType: "pvc",
+    serial: ser.id,
+    frame,
+    variantId: DEFAULT_VARIANT[frame],
+    lamination: ser.lamination[1] ?? ser.lamination[0] ?? "",
+    fittingBrand: ser.fittings[0]?.id ?? "",
+    fittingColor: ser.fittings[0]?.colors[0] ?? "",
+    glass: "double32",
+    width: 1400,
+    height: 1400,
+    quantity: 1,
+    components: {
+      sill: { enabled: false, width: 1400 },
+      mosquito: { enabled: false, width: 1400 },
+      ebb: { enabled: false, width: 1400 },
+    },
+    ...overrides,
+  };
+}
+
 export const initialCalcState: CalcState = {
-  product: "window",
-  materialType: "pvc",
-  serial: initialSerial.id,
-  frame: "double",
-  variantId: DEFAULT_VARIANT.double,
-  lamination: initialSerial.lamination[1] ?? initialSerial.lamination[0],
-  fittingBrand: initialSerial.fittings[0]?.id ?? "",
-  fittingColor: initialSerial.fittings[0]?.colors[0] ?? "",
-  glass: "double32",
-  width: 1400,
-  height: 1400,
-  quantity: 1,
-  components: {
-    sill: { enabled: false, width: 1400 },
-    mosquito: { enabled: false, width: 1400 },
-    ebb: { enabled: false, width: 1400 },
-  },
+  items: [defaultProductConfig()],
+  activeIndex: 0,
   name: "",
   phone: "",
   email: "",
@@ -371,27 +410,51 @@ export const initialCalcState: CalcState = {
   comment: "",
 };
 
-export function estimatePrice(s: CalcState): number {
-  const widthM = Math.max(0, Number(s.width) || 0) / 1000;
-  const heightM = Math.max(0, Number(s.height) || 0) / 1000;
+/** Price estimate for a single item (UZS). */
+export function estimateItem(c: ProductConfig): number {
+  const widthM = Math.max(0, Number(c.width) || 0) / 1000;
+  const heightM = Math.max(0, Number(c.height) || 0) / 1000;
   const areaM2 = widthM * heightM;
-  const base = GLASS_PRICE_PER_M2[s.glass] * areaM2;
+  const base = GLASS_PRICE_PER_M2[c.glass] * areaM2;
   let unit =
     base *
-    PRODUCT_FACTOR[s.product] *
-    MATERIAL_FACTOR[s.materialType] *
-    FRAME_FACTOR[s.frame];
+    PRODUCT_FACTOR[c.product] *
+    MATERIAL_FACTOR[c.materialType] *
+    FRAME_FACTOR[c.frame];
 
-  // Components priced per metre of width (in metres).
   for (const k of COMPONENTS) {
-    const c = s.components[k];
-    if (!c.enabled) continue;
-    const wM = Math.max(0, Number(c.width) || 0) / 1000;
+    const co = c.components[k];
+    if (!co.enabled) continue;
+    const wM = Math.max(0, Number(co.width) || 0) / 1000;
     unit += COMPONENT_PRICE_PER_M[k] * wM;
   }
 
-  const qty = Math.max(1, Number(s.quantity) || 1);
+  const qty = Math.max(1, Number(c.quantity) || 1);
   return Math.round((unit * qty) / 1000) * 1000;
+}
+
+/** Total across all items in the cart. */
+export function estimateTotal(s: CalcState): number {
+  return s.items.reduce((sum, c) => sum + estimateItem(c), 0);
+}
+
+/** Back-compat: some old callers may still import estimatePrice. */
+export const estimatePrice = estimateTotal;
+
+/**
+ * Human-readable label for an item tab — numbered per product so the user
+ * sees "Окно №1, Окно №2, Дверь №1" rather than a flat index.
+ */
+export function itemLabel(
+  items: ProductConfig[],
+  index: number,
+  productNames: Record<Product, string>,
+): string {
+  const item = items[index];
+  if (!item) return "";
+  const nthOfKind =
+    items.slice(0, index + 1).filter((x) => x.product === item.product).length;
+  return `${productNames[item.product]} №${nthOfKind}`;
 }
 
 /* Back-compat — kept while older imports still reference these. The new
