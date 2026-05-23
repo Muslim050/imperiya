@@ -52,6 +52,9 @@ export const SERVICES = [
   "shower",
   "sliding",
   "service",
+  "pergola",
+  "gates",
+  "wpc",
 ] as const;
 export type ServiceKey = (typeof SERVICES)[number];
 

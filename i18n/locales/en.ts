@@ -138,6 +138,9 @@ const en: Translation = {
       shower: "Shower cabins",
       sliding: "Sliding doors",
       service: "Service center",
+      pergola: "Terrace pergola",
+      gates: "Automatic gates",
+      wpc: "WPC decking board",
     },
   },
   about: {

@@ -138,6 +138,9 @@ const uz: Translation = {
       shower: "Dush kabinalari",
       sliding: "Surma eshiklar",
       service: "Servis markazi",
+      pergola: "Terassa uchun pergola",
+      gates: "Avtomatik darvozalar",
+      wpc: "DPK terassa taxtasi",
     },
   },
   about: {

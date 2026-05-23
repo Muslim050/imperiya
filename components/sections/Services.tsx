@@ -18,6 +18,9 @@ const SERVICE_IMG: Record<ServiceKey, string> = {
   shower: "/services/shower.jpg",
   sliding: "/services/sliding.jpeg",
   service: "/services/service.webp",
+  pergola: "/services/pergola.jpg",
+  gates: "/services/gates.jpg",
+  wpc: "/services/wpc.jpg",
 };
 
 /* Base tint shown while the photo loads (and if everything fails). */
@@ -28,6 +31,9 @@ const BG: Record<ServiceKey, string> = {
   shower: "linear-gradient(180deg,#4b3a32 0%,#16100c 100%)",
   sliding: "linear-gradient(180deg,#3d4a3d 0%,#0e1410 100%)",
   service: "linear-gradient(180deg,#2f3a45 0%,#0b1019 100%)",
+  pergola: "linear-gradient(180deg,#4a5b48 0%,#101b14 100%)",
+  gates: "linear-gradient(180deg,#3b3b3b 0%,#0d0d0d 100%)",
+  wpc: "linear-gradient(180deg,#5a4233 0%,#17100a 100%)",
 };
 
 export function Services() {

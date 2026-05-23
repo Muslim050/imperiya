@@ -1,20 +1,22 @@
 # Service tiles
 
-Drop a JPG/PNG for each service here. The component looks up images by
-filename matching the service key:
+Drop a JPG/PNG/WEBP per service here. The Services component reads the
+path from `SERVICE_IMG` in `components/sections/Services.tsx`.
 
-| Service                                   | File                           |
-|-------------------------------------------|--------------------------------|
-| Фасадные системы                          | `facade.jpg`                   |
-| Ролл ставни                               | `shutters.jpg`                 |
-| Регулировка и замена стеклопакетов        | `adjustment.jpg`               |
-| Душевые кабинки                           | `shower.jpg`                   |
-| Раздвижные двери                          | `sliding.jpg`                  |
-| Пергола для террасы                       | `pergola.jpg`                  |
-| Автоматические ворота                     | `gates.jpg`                    |
-| ДПК террасная доска                       | `wpc.jpg`                      |
+| Service                                   | File                |
+|-------------------------------------------|---------------------|
+| Фасадные системы                          | `facade.jpg`        |
+| Ролл ставни                               | `shutters.jpg`      |
+| Регулировка и замена стеклопакетов        | `adjustment.png`    |
+| Душевые кабинки                           | `shower.jpg`        |
+| Раздвижные двери                          | `sliding.jpeg`      |
+| Сервис центр                              | `service.webp`      |
+| Пергола для террасы                       | `pergola.jpg`       |
+| Автоматические ворота                     | `gates.jpg`         |
+| ДПК террасная доска                       | `wpc.jpg`           |
 
 Recommended size: ~800×760 px (the tile aspect ratio is 1 : 0.95).
 
-While a file is missing the tile shows a deterministic Picsum placeholder so
-the page never looks broken — replace those by dropping in real photos.
+While a file is missing the tile falls back to a deterministic Picsum
+photo so the page never looks broken. Extension can be changed — just
+edit `SERVICE_IMG`.
