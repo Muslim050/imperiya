@@ -78,6 +78,24 @@ export const PARTNERS: Partner[] = [
   { slug: "wink", name: "Wink", logo: "/partners/wink.png" },
 ];
 
+/**
+ * Certificates pulled from akfasteel.uz (AKFA Steel Group is the parent
+ * brand we are an authorised partner of). The `title` key maps to
+ * i18n `certificates.items.*`; image files live under public/certificates/.
+ */
+export interface Certificate {
+  id: string;
+  img: string;
+  titleKey: string;
+}
+
+export const CERTIFICATES: Certificate[] = [
+  { id: "iso", img: "/certificates/national-1.jpg", titleKey: "iso" },
+  { id: "gost-32603", img: "/certificates/national-2.jpg", titleKey: "gost32603" },
+  { id: "gost-30245", img: "/certificates/national-3.jpg", titleKey: "gost30245" },
+  { id: "gost-23486", img: "/certificates/inter-1.jpg", titleKey: "gost23486" },
+];
+
 /** New "Imperiya in numbers" block per the TZ. */
 export const STATS = [
   { key: "area", value: "1200" },

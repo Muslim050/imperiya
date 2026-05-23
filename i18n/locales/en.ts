@@ -180,6 +180,12 @@ const en: Translation = {
   },
   certificates: {
     title: "Certificates",
+    items: {
+      iso: "ISO 9001 Certificate",
+      gost32603: "Sandwich panels · GOST 32603-2021",
+      gost30245: "Accessories · GOST 30245-2012",
+      gost23486: "Fire-safety class NG · GOST 23486-79",
+    },
   },
   partners: {
     title: "Partners",

@@ -180,6 +180,12 @@ const uz: Translation = {
   },
   certificates: {
     title: "Sertifikatlar",
+    items: {
+      iso: "ISO 9001 sertifikati",
+      gost32603: "Sendvich panellar · GOST 32603-2021",
+      gost30245: "Aksessuarlar · GOST 30245-2012",
+      gost23486: "Yong‘inga chidamlilik NG · GOST 23486-79",
+    },
   },
   partners: {
     title: "Hamkorlar",
