@@ -69,16 +69,17 @@ export function Hero() {
           </p>
 
           <div className="mb-[26px] flex items-center gap-[22px]">
-            <span className="flex items-center gap-2 text-[13px] font-bold tracking-[0.04em]">
-              <span className="grid size-6 place-items-center rounded-[3px] bg-white text-[#111]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2l9 4v6c0 5-3.5 9-9 10-5.5-1-9-5-9-10V6l9-4z" stroke="currentColor" strokeWidth="1.6" />
-                  <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.6" />
-                </svg>
-              </span>
-              ENGELBERG
+            <span className="inline-flex items-center bg-white px-3 py-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brands/engelberg.png"
+                alt="Engelberg"
+                loading="lazy"
+                decoding="async"
+                className="h-7 w-auto object-contain"
+              />
             </span>
-            {/* THERMO — icon removed per the TZ */}
+            {/* THERMO — wordmark only, no icon per the TZ */}
             <span className="text-[13px] font-bold tracking-[0.04em]">
               THERMO
             </span>
