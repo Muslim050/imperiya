@@ -1,9 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PARTNERS } from "@/data/catalog";
+import { PARTNERS, type Partner } from "@/data/catalog";
 
-/** Partners block per the TZ. Wordmarks now; vector logos to be swapped in. */
+/**
+ * One partner card — renders the real logo from public/partners/. If the
+ * file is missing (or fails to load) the card gracefully falls back to a
+ * wordmark so the grid never shows a broken image.
+ */
+function PartnerCard({ partner }: { partner: Partner }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="grid h-[88px] place-items-center border border-[#ECECEC] bg-white px-4">
+      {failed ? (
+        <span className="text-[17px] font-extrabold uppercase tracking-tight text-[#555]">
+          {partner.name}
+        </span>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={partner.logo}
+          alt={partner.name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="max-h-[56px] max-w-[150px] object-contain"
+        />
+      )}
+    </div>
+  );
+}
+
+/** Partners block per the TZ. Real logos under public/partners/. */
 export function Partners() {
   const { t } = useTranslation();
   return (
@@ -14,14 +43,7 @@ export function Partners() {
         </h2>
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4 lg:grid-cols-7">
           {PARTNERS.map((p) => (
-            <div
-              key={p}
-              className="grid h-[88px] place-items-center border border-[#ECECEC] bg-white px-4"
-            >
-              <span className="text-[17px] font-extrabold uppercase tracking-tight text-[#555]">
-                {p}
-              </span>
-            </div>
+            <PartnerCard key={p.slug} partner={p} />
           ))}
         </div>
       </div>

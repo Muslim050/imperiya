@@ -55,15 +55,26 @@ export const SERVICES = [
 ] as const;
 export type ServiceKey = (typeof SERVICES)[number];
 
-export const PARTNERS = [
-  "Benkam",
-  "Roto",
-  "Akfa",
-  "Fornax",
-  "Kale",
-  "Vorne", 
-  "Master",
-] as const;
+/**
+ * Partner brands. `logo` is the path under public/partners/ — if the file
+ * is missing the Partners section falls back to the wordmark `name`.
+ * Drop new logos with the same `slug` to swap them in instantly.
+ */
+export interface Partner {
+  slug: string;
+  name: string;
+  logo: string;
+}
+
+export const PARTNERS: Partner[] = [
+  { slug: "akfa", name: "Akfa", logo: "/partners/akfa.png" },
+  { slug: "rehau", name: "REHAU", logo: "/partners/rehau.png" },
+  { slug: "benkam", name: "Benkam", logo: "/partners/benkam.jpg" },
+  { slug: "continental", name: "Continental", logo: "/partners/continental.png" },
+  { slug: "kinlong", name: "Kin Long", logo: "/partners/kinlong.png" },
+  { slug: "roto", name: "Roto", logo: "/partners/roto.png" },
+  { slug: "wink", name: "Wink", logo: "/partners/wink.png" },
+];
 
 /** New "Imperiya in numbers" block per the TZ. */
 export const STATS = [
