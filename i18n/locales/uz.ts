@@ -106,6 +106,8 @@ const uz: Translation = {
     submit: "Ariza yuborish",
     success: "Rahmat! Tez orada siz bilan bog‘lanamiz.",
     successItems_one: "Arizada {{count}} ta pozitsiya.",
+    successItems_few: "Arizada {{count}} ta pozitsiya.",
+    successItems_many: "Arizada {{count}} ta pozitsiya.",
     successItems_other: "Arizada {{count}} ta pozitsiya.",
     required: "Majburiy maydonlarni to‘ldiring",
     addAnother: "Yana qo‘shish",

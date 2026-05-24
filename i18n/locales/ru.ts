@@ -103,9 +103,13 @@ const ru = {
     sendMessenger: "Отправим расчёт в мессенджер",
     submit: "Отправить заявку",
     success: "Спасибо! Мы свяжемся с вами в ближайшее время.",
+    /* Plural forms — Russian needs one/few/many, English & Uzbek need
+     * one/other. We declare all four in every locale so the i18n schema
+     * (derived from the ru object) stays consistent across locales. */
     successItems_one: "В заявке {{count}} позиция.",
     successItems_few: "В заявке {{count}} позиции.",
     successItems_many: "В заявке {{count}} позиций.",
+    successItems_other: "В заявке {{count}} позиций.",
     required: "Заполните обязательные поля",
     addAnother: "Добавить ещё",
     removeItem: "Удалить позицию",

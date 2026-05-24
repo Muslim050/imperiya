@@ -106,6 +106,8 @@ const en: Translation = {
     submit: "Submit request",
     success: "Thank you! We will contact you shortly.",
     successItems_one: "{{count}} item in this request.",
+    successItems_few: "{{count}} items in this request.",
+    successItems_many: "{{count}} items in this request.",
     successItems_other: "{{count}} items in this request.",
     required: "Please fill in the required fields",
     addAnother: "Add another",
