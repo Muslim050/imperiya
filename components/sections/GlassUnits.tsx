@@ -27,7 +27,11 @@ const SPEC: Record<
   multimix: { panes: 3, energy: true, argon: true },
 };
 
-/** SVG diagram shown when no real photo is available yet. */
+/**
+ * SVG diagram shown when no real photo is available yet. Drawn at a
+ * generous size so it sits comfortably in the bigger thumbnail slot
+ * the photo cards use.
+ */
 function GlassDiag({ k }: { k: GlassUnitKey }) {
   const { panes, energy, argon } = SPEC[k];
   const total = 36;
@@ -37,10 +41,8 @@ function GlassDiag({ k }: { k: GlassUnitKey }) {
   const startX = (total - span) / 2 - w / 2;
   return (
     <svg
-      width="56"
-      height="110"
       viewBox="0 0 38 110"
-      className="shrink-0"
+      className="block h-full w-auto max-w-full"
       aria-hidden
     >
       <rect x={startX - 2} y="0" width={span + w + 4} height="4" fill="#9b6d2c" />
@@ -76,21 +78,30 @@ function GlassDiag({ k }: { k: GlassUnitKey }) {
   );
 }
 
-/** Photo thumbnail with automatic fallback to the SVG diagram. */
+/**
+ * Uniform 130×160 thumbnail slot — every card gets the same box regardless
+ * of the source image's aspect ratio. `object-contain` scales the photo to
+ * fit without cropping; cross-section portraits fill the height, wider
+ * shots fit by width, both centred.
+ */
 function GlassThumb({ k, alt }: { k: GlassUnitKey; alt: string }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return <GlassDiag k={k} />;
   return (
-    <img
-      src={GLASS_IMG[k]}
-      alt={alt}
-      width={68}
-      height={110}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-      className="block h-[110px] w-[68px] shrink-0 object-contain"
-    />
+    <div className="grid h-[160px] w-[130px] shrink-0 place-items-center">
+      {failed ? (
+        <GlassDiag k={k} />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={GLASS_IMG[k]}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="block max-h-full max-w-full object-contain"
+        />
+      )}
+    </div>
   );
 }
 
@@ -102,18 +113,21 @@ export function GlassUnits() {
         <h2 className="m-0 mb-[18px] text-lg font-extrabold uppercase tracking-[0.06em]">
           {t("glass.title")}
         </h2>
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {/* Wider, uniform cards — 1col on mobile, 2col from sm, 3col from
+            lg. The previous 6-column setup crushed each card down to
+            ~210px on desktop and clipped the descriptions. */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {GLASS_UNITS.map((g) => (
             <div
               key={g}
-              className="flex min-h-[160px] items-start gap-3.5 border border-[#ECECEC] bg-white p-[18px]"
+              className="flex min-h-[200px] items-center gap-4 border border-[#ECECEC] bg-white p-5"
             >
               <GlassThumb k={g} alt={t(`glass.names.${g}`)} />
-              <div>
-                <h3 className="m-0 mb-2 text-[13px] font-extrabold leading-[1.25] text-[#111]">
+              <div className="min-w-0 flex-1">
+                <h3 className="m-0 mb-2 text-[14px] font-extrabold leading-[1.25] text-[#111]">
                   {t(`glass.names.${g}`)}
                 </h3>
-                <p className="m-0 text-[11px] leading-[1.5] text-[#666]">
+                <p className="m-0 text-[12px] leading-[1.5] text-[#666]">
                   {t(`glass.items.${g}`)}
                 </p>
               </div>
