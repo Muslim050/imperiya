@@ -8,25 +8,211 @@
 
 export type ProfileCategory = "pvc" | "facade";
 
+/** One row in the spec table on the detail page. */
+export interface ProfileSpec {
+  label: string;
+  value: string;
+}
+
 export interface ProfileSeries {
   slug: string;
   name: string;
   category: ProfileCategory;
+  /** Photo / cross-section under public/profiles/{slug}.png. */
+  image?: string;
+  /** Russian-language tech specs straight from the client's doc. */
+  specs?: ProfileSpec[];
 }
 
+/* Specs sourced verbatim from `Серии профилей.docx`. Material designation
+ * ("ПВХ" / "Алюминиевый") drives the catalog category. BCF MAX was
+ * explicitly removed by the client ("нужно удалить он не нужен"). */
 export const PROFILE_SERIES: ProfileSeries[] = [
-  { slug: "thermo-70", name: "Thermo 70", category: "pvc" },
-  { slug: "thermo-58", name: "Thermo 58", category: "pvc" },
-  { slug: "engelberg-7000", name: "Engelberg 7000", category: "pvc" },
-  { slug: "engelberg-8000-infinity", name: "Engelberg 8000 Infinity", category: "pvc" },
-  { slug: "quatro-6000", name: "Quatro 6000", category: "pvc" },
-  { slug: "trio-6000", name: "Trio 6000", category: "pvc" },
-  { slug: "penta-6500", name: "Penta 6500", category: "pvc" },
-  { slug: "akfa-7000", name: "Akfa 7000", category: "pvc" },
-  { slug: "aldoks", name: "Aldoks", category: "pvc" },
-  { slug: "bcf-48", name: "BCF 48", category: "facade" },
-  { slug: "bcf-50", name: "BCF 50", category: "facade" },
-  { slug: "bcf-max", name: "BCF Max", category: "facade" },
+  {
+    slug: "thermo-70",
+    name: "Thermo 70",
+    category: "pvc",
+    image: "/profiles/thermo-70.png",
+    specs: [
+      { label: "Тип профиля", value: "Алюминий" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "1,4–1,9 мм" },
+      { label: "Количество камер", value: "3" },
+      { label: "Макс. высота створки", value: "2600 мм" },
+      { label: "Макс. ширина створки", value: "1200 мм" },
+      { label: "Толщина стеклопакета", value: "20–36 мм" },
+      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
+      { label: "Монтажная глубина", value: "70 мм" },
+    ],
+  },
+  {
+    slug: "thermo-58",
+    name: "Thermo 58",
+    category: "pvc",
+    image: "/profiles/thermo-58.png",
+    specs: [
+      { label: "Тип профиля", value: "Алюминий" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "1,4 мм" },
+      { label: "Количество камер", value: "3" },
+      { label: "Макс. высота створки", value: "2400 мм" },
+      { label: "Макс. ширина створки", value: "1000 мм" },
+      { label: "Толщина стеклопакета", value: "6–32 мм" },
+      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
+      { label: "Монтажная глубина", value: "58 мм" },
+    ],
+  },
+  {
+    slug: "engelberg-7000",
+    name: "Engelberg 7000",
+    category: "pvc",
+    image: "/profiles/engelberg-7000.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "2,8 мм" },
+      { label: "Количество камер", value: "5" },
+      { label: "Макс. высота створки", value: "2200 мм" },
+      { label: "Макс. ширина створки", value: "900 мм" },
+      { label: "Толщина стеклопакета", value: "24–32 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "70 мм" },
+    ],
+  },
+  {
+    slug: "engelberg-8000",
+    name: "Engelberg 8000",
+    category: "pvc",
+    image: "/profiles/engelberg-8000.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "2,8 мм" },
+      { label: "Количество камер", value: "6" },
+      { label: "Макс. высота створки", value: "2300 мм" },
+      { label: "Макс. ширина створки", value: "1000 мм" },
+      { label: "Толщина стеклопакета", value: "24–32 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "80 мм" },
+    ],
+  },
+  {
+    slug: "quatro-6000",
+    name: "Quatro 6000",
+    category: "pvc",
+    image: "/profiles/quatro-6000.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Количество камер", value: "4" },
+      { label: "Толщина стенки", value: "2,2 мм" },
+      { label: "Толщина стеклопакета", value: "4–24 мм" },
+      { label: "Макс. высота створки", value: "1500 мм" },
+      { label: "Макс. ширина створки", value: "650 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "60 мм" },
+    ],
+  },
+  {
+    slug: "trio-6000",
+    name: "Trio 6000",
+    category: "pvc",
+    image: "/profiles/trio-6000.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Количество камер", value: "3" },
+      { label: "Толщина стенки", value: "2,8 мм" },
+      { label: "Толщина стеклопакета", value: "4–24 мм" },
+      { label: "Макс. высота створки", value: "1600 мм" },
+      { label: "Макс. ширина створки", value: "650 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "60 мм" },
+    ],
+  },
+  {
+    slug: "penta-6500",
+    name: "Penta 6500",
+    category: "pvc",
+    image: "/profiles/penta-6500.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Количество камер", value: "5" },
+      { label: "Толщина стенки", value: "2,4 мм" },
+      { label: "Толщина стеклопакета", value: "24–32 мм" },
+      { label: "Макс. высота створки", value: "1600 мм" },
+      { label: "Макс. ширина створки", value: "650 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "65 мм" },
+    ],
+  },
+  {
+    slug: "akfa-7000",
+    name: "Akfa 7000",
+    category: "pvc",
+    image: "/profiles/akfa-7000.png",
+    specs: [
+      { label: "Тип профиля", value: "ПВХ" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Количество камер", value: "5" },
+      { label: "Толщина стенки", value: "2,7 мм" },
+      { label: "Толщина стеклопакета", value: "24–32 мм" },
+      { label: "Макс. высота створки", value: "1700 мм" },
+      { label: "Макс. ширина створки", value: "700 мм" },
+      { label: "Покрытие", value: "Ламинация" },
+      { label: "Монтажная глубина", value: "70 мм" },
+    ],
+  },
+  {
+    slug: "aldoks",
+    name: "Aldoks",
+    category: "pvc",
+    image: "/profiles/aldoks.png",
+    specs: [
+      { label: "Тип профиля", value: "Алюминиевый" },
+      { label: "Серия", value: "холодная" },
+      { label: "Толщина стенки", value: "1 мм" },
+      { label: "Макс. высота створки", value: "2400 мм" },
+      { label: "Макс. ширина створки", value: "900 мм" },
+      { label: "Толщина стеклопакета", value: "4–24 мм" },
+      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
+      { label: "Монтажная глубина", value: "47 мм" },
+    ],
+  },
+  {
+    slug: "bcf-48",
+    name: "BCF 48",
+    category: "facade",
+    image: "/profiles/bcf-48.png",
+    specs: [
+      { label: "Тип профиля", value: "Алюминиевый" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "1,5 / 2 / 3 мм" },
+      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
+      { label: "Варианты остекления", value: "декоративные крышки / прижимной профиль" },
+      { label: "Макс. высота створки", value: "2400 мм" },
+      { label: "Макс. ширина створки", value: "900 мм" },
+      { label: "Толщина стеклопакета", value: "6–32 мм" },
+      { label: "Макс. вес заполнения", value: "120 кг" },
+    ],
+  },
+  {
+    slug: "bcf-50",
+    name: "BCF 50",
+    category: "facade",
+    specs: [
+      { label: "Тип профиля", value: "Алюминиевый" },
+      { label: "Серия", value: "тёплая" },
+      { label: "Толщина стенки", value: "1,5 / 2 / 3 мм" },
+      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
+      { label: "Варианты остекления", value: "декоративные крышки / прижимной профиль" },
+      { label: "Макс. высота створки", value: "2400 мм" },
+      { label: "Макс. ширина створки", value: "900 мм" },
+      { label: "Толщина стеклопакета", value: "6–32 мм" },
+      { label: "Макс. вес заполнения", value: "170 кг" },
+    ],
+  },
 ];
 
 export function getProfileBySlug(slug: string): ProfileSeries | undefined {
