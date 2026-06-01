@@ -181,9 +181,12 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     ],
   },
   {
+    /* Client decision: BCF 48 lives with the rest of the profile series
+     * instead of the standalone "Фасадные системы" block — the artwork
+     * is more profile-style than facade-system-overview. */
     slug: "bcf-48",
     name: "BCF 48",
-    category: "facade",
+    category: "pvc",
     image: "/profiles/bcf-48.png",
     specs: [
       { label: "Тип профиля", value: "Алюминиевый" },
