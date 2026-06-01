@@ -5,12 +5,15 @@ swaps the SVG diagram for the real photo as soon as the file is present.
 
 | Glass unit                             | File              |
 |----------------------------------------|-------------------|
-| Стеклопакет однокамерный 24 мм         | `single24.jpg`    |
-| Стеклопакет двухкамерный 32 мм         | `double32.jpg`    |
-| Стеклопакет энергосберегающий          | `energy.jpg`      |
-| Стеклопакет с аргоном                  | `argon.jpg`       |
-| Стеклопакет мультимикс                 | `multimix.jpg`    |
-| Стекло от 4 до 20 мм                   | `single.jpg`      |
+| Стеклопакет однокамерный 24 мм         | `single24.png`    |
+| Стеклопакет двухкамерный 32 мм         | `double32.png`    |
+| Стеклопакет энергосберегающий          | `energy.png`      |
+| Стеклопакет с аргоном                  | `argon.png`       |
+| Стеклопакет мультимикс                 | `multimix.png`    |
+| Стекло от 4 до 20 мм                   | `single.png`      |
+
+(Real photos shipped with the project — sourced from the client's
+`сайт (1).docx` supplementary asset pack.)
 
 Recommended size: ~200×320 px (or any aspect — `object-contain` keeps it
 sane), transparent or white background. The rendered slot is 68×110.

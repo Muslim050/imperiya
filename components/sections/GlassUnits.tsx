@@ -4,14 +4,15 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GLASS_UNITS, type GlassUnitKey } from "@/data/catalog";
 
-/** Drop real product photos into public/glass/<key>.jpg to swap automatically. */
+/** Real cross-section photos sourced from the client's `сайт (1).docx`
+ * supplementary asset pack. Files live under public/glass/<key>.png. */
 const GLASS_IMG: Record<GlassUnitKey, string> = {
-  single24: "/glass/single24.jpg",
-  double32: "/glass/double32.jpg",
-  energy: "/glass/energy.jpg",
-  argon: "/glass/argon.jpg",
-  multimix: "/glass/multimix.jpg",
-  single: "/glass/single.jpg",
+  single24: "/glass/single24.png",
+  double32: "/glass/double32.png",
+  energy: "/glass/energy.png",
+  argon: "/glass/argon.png",
+  multimix: "/glass/multimix.png",
+  single: "/glass/single.png",
 };
 
 const SPEC: Record<
