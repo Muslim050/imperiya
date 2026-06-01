@@ -47,36 +47,21 @@ function SeriesCard({ item }: { item: Series }) {
 
 export function ProfileSeries() {
   const { t } = useTranslation();
-  const pvc = PROFILE_SERIES.filter((p) => p.category === "pvc");
-  const facade = PROFILE_SERIES.filter((p) => p.category === "facade");
-
   return (
-    <>
-      <section id="profiles" className="scroll-mt-40 bg-ink py-9 text-white">
-        <div className="inner">
-          <h2 className="m-0 mb-[22px] text-lg font-extrabold uppercase tracking-[0.06em]">
-            {t("profiles.title")}
-          </h2>
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-            {pvc.map((p) => (
-              <SeriesCard key={p.slug} item={p} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="facade" className="scroll-mt-40 bg-ink pb-11 text-white">
-        <div className="inner">
+    <section
+      id="profiles"
+      className="scroll-mt-40 bg-ink py-9 pb-11 text-white"
+    >
+      <div className="inner">
         <h2 className="m-0 mb-[22px] text-lg font-extrabold uppercase tracking-[0.06em]">
-          {t("profiles.categories.facade")}
+          {t("profiles.title")}
         </h2>
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-          {facade.map((p) => (
+          {PROFILE_SERIES.map((p) => (
             <SeriesCard key={p.slug} item={p} />
           ))}
         </div>
-        </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

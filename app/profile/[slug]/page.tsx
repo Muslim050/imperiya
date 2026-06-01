@@ -51,7 +51,7 @@ export default function ProfileDetailPage() {
           <div
             className="relative grid place-items-center overflow-hidden border border-[#1f1f1f]"
             style={{
-              aspectRatio: "4 / 3",
+
               background: "radial-gradient(80% 80% at 50% 60%,#3a3a3a,#0c0c0c)",
             }}
           >

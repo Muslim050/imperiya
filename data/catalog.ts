@@ -200,22 +200,6 @@ export const PROFILE_SERIES: ProfileSeries[] = [
       { label: "Макс. вес заполнения", value: "120 кг" },
     ],
   },
-  {
-    slug: "bcf-50",
-    name: "BCF 50",
-    category: "facade",
-    specs: [
-      { label: "Тип профиля", value: "Алюминиевый" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "1,5 / 2 / 3 мм" },
-      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
-      { label: "Варианты остекления", value: "декоративные крышки / прижимной профиль" },
-      { label: "Макс. высота створки", value: "2400 мм" },
-      { label: "Макс. ширина створки", value: "900 мм" },
-      { label: "Толщина стеклопакета", value: "6–32 мм" },
-      { label: "Макс. вес заполнения", value: "170 кг" },
-    ],
-  },
 ];
 
 export function getProfileBySlug(slug: string): ProfileSeries | undefined {
