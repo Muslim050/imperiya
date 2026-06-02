@@ -69,7 +69,7 @@ export function Logo({
               alt="Akfa"
               loading="lazy"
               decoding="async"
-              className="h-[20px] w-auto object-contain"
+              className="h-[25px] w-auto object-contain"
             />
           </span>
         )}

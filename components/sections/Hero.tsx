@@ -75,10 +75,10 @@ export function Hero() {
               alt="Engelberg"
               loading="lazy"
               decoding="async"
-              className="h-9 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
             {/* THERMO — wordmark only, no icon per the TZ */}
-            <span className="text-[13px] font-bold tracking-[0.04em]">
+            <span className="text-[25px] font-bold tracking-[0.04em]">
               THERMO
             </span>
           </div>
