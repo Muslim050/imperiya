@@ -3,6 +3,13 @@
 import { useTranslation } from "react-i18next";
 import { GLASS_UNITS, type GlassUnitKey } from "@/data/catalog";
 
+const GLASS_PHOTOS: Partial<Record<GlassUnitKey, string>> = {
+  single24: "/glass/Стеклопакет однокамерный 24 мм.jpg",
+  double32: "/glass/Стеклопакет двухкамерный 32 мм.jpg",
+  argon: "/glass/Стеклопакет однокамерный 24 мм.jpg",
+  single: "/glass/other.webp",
+};
+
 /** Structural spec per unit — drives the SVG diagram rendering. */
 const SPEC: Record<
   GlassUnitKey,
@@ -219,9 +226,21 @@ function GlassDiag({ k }: { k: GlassUnitKey }) {
  * consistent visual instead of six different-aspect photos.
  */
 function GlassThumb({ k }: { k: GlassUnitKey }) {
+  const photo = GLASS_PHOTOS[k];
+
   return (
     <div className="grid h-[160px] w-[130px] shrink-0 place-items-center">
-      <GlassDiag k={k} />
+      {photo ? (
+        <img
+          src={photo}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="block h-full w-auto max-w-full object-contain"
+        />
+      ) : (
+        <GlassDiag k={k} />
+      )}
     </div>
   );
 }
