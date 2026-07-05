@@ -3,10 +3,15 @@
 import { useTranslation } from "react-i18next";
 import { GLASS_UNITS, type GlassUnitKey } from "@/data/catalog";
 
+/** Real product photos for the units the client supplied artwork for.
+ * ASCII filenames only — Cyrillic/space paths don't serve reliably as
+ * static assets. Units without an entry fall back to the inline SVG. */
 const GLASS_PHOTOS: Partial<Record<GlassUnitKey, string>> = {
-  single24: "/glass/Стеклопакет однокамерный 24 мм.jpg",
-  double32: "/glass/Стеклопакет двухкамерный 32 мм.jpg",
-  argon: "/glass/Стеклопакет однокамерный 24 мм.jpg",
+  single24: "/glass/single24.jpg",
+  double32: "/glass/double32.jpg",
+  energy: "/glass/double32.jpg",
+  argon: "/glass/single24.jpg",
+  multimix: "/glass/double32.jpg",
   single: "/glass/other.webp",
 };
 

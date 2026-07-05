@@ -138,11 +138,13 @@ export function Header() {
       </div>
 
       {/* Bordered second-row: centered nav with the language switcher
-          pinned to the right edge. Equal-width flex spacers on either
-          side of the nav keep it perfectly centred regardless of the
-          switcher's width. */}
-      <div className="inner mt-3">
-        <div className="hidden items-center border-t border-line-2 pt-3.5 pb-3.5 lg:flex">
+          pinned to the right edge. The hairline divider is full-bleed
+          (edge to edge, like the orange accent) so it never reads as
+          "cut off"; the nav content itself stays inside `.inner`.
+          Equal-width flex spacers on either side of the nav keep it
+          perfectly centred regardless of the switcher's width. */}
+      <div className="mt-3 hidden border-t border-line-2 lg:block">
+        <div className="inner flex items-center pt-3.5 pb-3.5">
           <div className="flex-1" />
           <nav className="flex gap-[38px] text-[13px] font-semibold uppercase tracking-[0.02em]">
           {NAV.map((item) => {
