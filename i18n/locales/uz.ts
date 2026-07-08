@@ -26,7 +26,7 @@ const uz: Translation = {
     ctaCalc: "Oynani hisoblash",
     ctaConsult: "Bepul maslahat",
     features: {
-      years: "Bozorda\n14 yil",
+      years: "Bozorda\n16 yil",
       warranty: "10 yilgacha\nkafolat",
       production: "O‘z\nishlab chiqarish",
       turnkey: "Kalit\ntopshirish",

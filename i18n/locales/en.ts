@@ -26,7 +26,7 @@ const en: Translation = {
     ctaCalc: "Calculate window",
     ctaConsult: "Free consultation",
     features: {
-      years: "14 years\non the market",
+      years: "16 years\non the market",
       warranty: "Warranty\nup to 10 years",
       production: "In-house\nproduction",
       turnkey: "Turnkey\ninstallation",

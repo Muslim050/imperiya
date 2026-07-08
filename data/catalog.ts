@@ -275,7 +275,7 @@ export const STATS = [
   { key: "clients", value: "30 000+" },
   { key: "lines", value: "15" },
   { key: "constructions", value: "2500+" },
-  { key: "years", value: "14" },
+  { key: "years", value: "16" },
 ] as const;
 
 export const CONTACTS = {

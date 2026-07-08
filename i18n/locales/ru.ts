@@ -24,7 +24,7 @@ const ru = {
     ctaCalc: "Рассчитать окно",
     ctaConsult: "Бесплатная консультация",
     features: {
-      years: "14 лет\nна рынке",
+      years: "16 лет\nна рынке",
       warranty: "Гарантия\nдо 10 лет",
       production: "Собственное\nпроизводство",
       turnkey: "Монтаж\nпод ключ",
