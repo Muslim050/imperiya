@@ -56,15 +56,55 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden bg-night text-white">
-      <div className="inner !px-0">
-      <div className="grid min-h-[430px] lg:grid-cols-[480px_1fr]">
-        {/* LEFT */}
-        <div className="relative z-[2] px-5 py-12 sm:px-8 lg:py-[54px] lg:pr-0 lg:pl-10">
+      {/* Engelberg banner on the right ~65%. On desktop it's shown in full
+          (object-contain) so it's never cropped; the black letterbox blends into
+          the night background. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/hero/engelberg.jpg"
+        alt="Окна Engelberg"
+        loading="eager"
+        decoding="async"
+        onError={(e) => {
+          // tolerate a .png source; if neither exists, fall back to the dark panel
+          const img = e.currentTarget;
+          if (!img.dataset.fallback) {
+            img.dataset.fallback = "1";
+            img.src = "/hero/engelberg.png";
+          } else {
+            img.style.display = "none";
+          }
+        }}
+        className="absolute inset-y-0 right-0 z-0 h-full w-full object-cover object-center lg:w-[70%] lg:object-contain lg:object-right"
+      />
+
+      {/* Darkened background behind the text (left zone) so it reads on its own
+          panel, then fades to fully clear before the window so the photo's right
+          side stays untouched. */}
+      <div
+        className="absolute inset-0 z-[1] hidden lg:block"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(11,11,11,.95) 0%, rgba(11,11,11,.93) 32%, rgba(11,11,11,.72) 42%, rgba(11,11,11,.32) 54%, rgba(11,11,11,.08) 62%, rgba(11,11,11,0) 70%)",
+        }}
+      />
+      {/* below lg the photo is full-bleed behind the text, so darken the left
+          block here too (horizontal), keeping the right side with the window lighter */}
+      <div
+        className="absolute inset-0 z-[1] lg:hidden"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(11,11,11,.96) 0%, rgba(11,11,11,.9) 44%, rgba(11,11,11,.68) 64%, rgba(11,11,11,.32) 82%, rgba(11,11,11,.12) 100%)",
+        }}
+      />
+
+      <div className="inner relative z-[2]">
+        <div className="flex min-h-[460px] max-w-[520px] flex-col justify-center py-14 lg:min-h-[520px] lg:max-w-[420px] lg:py-[72px]">
           <h1 className="m-0 mb-[18px] text-[40px] font-extrabold uppercase leading-none tracking-[-0.01em] sm:text-[48px]">
             {t("hero.title1")}
             <span className="block text-orange">{t("hero.title2")}</span>
           </h1>
-          <p className="mb-[22px] max-w-[380px] text-[15px] leading-[1.45] text-[#cfcfcf]">
+          <p className="mb-[22px] max-w-[380px] text-[15px] leading-[1.45] text-[#dcdcdc]">
             {t("hero.subtitle")}
           </p>
 
@@ -113,118 +153,6 @@ export function Hero() {
             </Link>
           </div>
         </div>
-
-        {/* RIGHT — window view scene */}
-        <div className="relative min-h-[260px]">
-          <svg
-            className="absolute inset-0 z-[1] h-full w-full"
-            preserveAspectRatio="xMidYMid slice"
-            viewBox="0 0 800 430"
-          >
-            <defs>
-              <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#dfe8ef" />
-                <stop offset=".55" stopColor="#bcc6cf" />
-                <stop offset="1" stopColor="#8e9aa5" />
-              </linearGradient>
-              <linearGradient id="m1" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#6a7a86" />
-                <stop offset="1" stopColor="#2b333b" />
-              </linearGradient>
-              <linearGradient id="m2" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#4d5b67" />
-                <stop offset="1" stopColor="#1d242b" />
-              </linearGradient>
-              <linearGradient id="water" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#3b4956" />
-                <stop offset="1" stopColor="#0e1217" />
-              </linearGradient>
-            </defs>
-            <rect width="800" height="430" fill="url(#sky)" />
-            <path
-              d="M0 220 L80 170 L160 200 L240 150 L330 195 L420 160 L520 200 L620 165 L720 195 L800 175 L800 270 L0 270 Z"
-              fill="url(#m1)"
-              opacity=".9"
-            />
-            <path
-              d="M0 250 L70 215 L160 250 L260 200 L360 245 L460 215 L570 250 L680 220 L800 240 L800 300 L0 300 Z"
-              fill="url(#m2)"
-            />
-            <path
-              d="M0 285 Q 60 270 120 285 T 240 285 T 360 285 T 480 285 T 600 285 T 720 285 T 840 285 L840 320 L0 320 Z"
-              fill="#142019"
-            />
-            <g fill="#0e1813">
-              <path d="M120 285 l8 -28 l8 28 z" />
-              <path d="M160 287 l10 -34 l10 34 z" />
-              <path d="M210 286 l9 -30 l9 30 z" />
-              <path d="M280 286 l11 -38 l11 38 z" />
-              <path d="M340 285 l8 -26 l8 26 z" />
-              <path d="M410 286 l10 -32 l10 32 z" />
-              <path d="M470 285 l9 -30 l9 30 z" />
-              <path d="M540 286 l11 -36 l11 36 z" />
-              <path d="M610 285 l8 -28 l8 28 z" />
-              <path d="M680 286 l10 -34 l10 34 z" />
-            </g>
-            <rect x="0" y="310" width="800" height="40" fill="url(#water)" />
-          </svg>
-
-          {/* photo tone + left fade into the dark panel */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(80% 70% at 80% 100%, rgba(20,12,4,0) 0%, rgba(0,0,0,.55) 100%), linear-gradient(180deg,rgba(58,74,92,0) 0%, rgba(36,51,69,.2) 70%, rgba(15,22,32,.5) 100%)",
-            }}
-          />
-          <div
-            className="absolute inset-0 z-[2] hidden lg:block"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(11,11,11,1) 0%, rgba(11,11,11,.55) 22%, rgba(11,11,11,0) 38%)",
-            }}
-          />
-
-          {/* window mullions */}
-          <div className="absolute inset-0 z-[3] grid grid-cols-8 pointer-events-none">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <span
-                key={i}
-                className={i === 0 ? "" : "border-l border-black/50"}
-                style={{ boxShadow: "inset 1px 0 0 rgba(255,255,255,.04)" }}
-              />
-            ))}
-          </div>
-
-          {/* interior */}
-          <div className="absolute inset-x-0 bottom-0 z-[4] h-[48%] pointer-events-none">
-            <div
-              className="absolute inset-x-0 bottom-0 h-[38%]"
-              style={{ background: "linear-gradient(180deg,#1c140c 0%,#0a0805 100%)" }}
-            />
-            <div
-              className="absolute bottom-[24%] left-[38%] h-[30%] w-[3%]"
-              style={{ background: "linear-gradient(180deg,#c6a574,#5e4a2c)" }}
-            />
-            <div
-              className="absolute bottom-[14%] left-[46%] right-[8%] h-[50%] rounded-[6px_6px_4px_4px]"
-              style={{
-                background: "linear-gradient(180deg,#5c4836 0%,#3a2c1f 100%)",
-                boxShadow: "0 -8px 18px rgba(0,0,0,.5)",
-              }}
-            />
-            <div className="absolute bottom-[46%] left-[50%] h-[32%] w-[8%] rounded-[4px] bg-[#b89875]" />
-            <div className="absolute bottom-[46%] left-[60%] h-[32%] w-[8%] rounded-[4px] bg-[#947458]" />
-            <div
-              className="absolute bottom-[18%] left-[84%] h-[46%] w-[7%]"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 30%,#2d4a2a 0%,#16261a 70%,transparent 72%)",
-              }}
-            />
-          </div>
-        </div>
-      </div>
       </div>
     </section>
   );
