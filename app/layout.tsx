@@ -4,6 +4,7 @@ import { I18nProvider } from "@/components/I18nProvider";
 import { ScrollManager } from "@/components/ScrollManager";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { MobileContactBar } from "@/components/layout/MobileContactBar";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   SITE_URL,
@@ -87,11 +88,12 @@ export default function RootLayout({
       </head>
       <body>
         <I18nProvider>
-          <div className="page">
+          <div className="page pb-[calc(64px+env(safe-area-inset-bottom))] lg:pb-0">
             <ScrollManager />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
+            <MobileContactBar />
           </div>
         </I18nProvider>
       </body>

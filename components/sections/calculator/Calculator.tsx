@@ -37,6 +37,24 @@ import {
 const SECTION_TITLE =
   "m-0 mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-2";
 
+type ValidationErrors = Partial<Record<"width" | "height" | "quantity" | "name" | "phone" | "email", string>>;
+
+function formatUzPhone(value: string) {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("998")) digits = digits.slice(3);
+  digits = digits.slice(0, 9);
+  const parts = [digits.slice(0, 2), digits.slice(2, 5), digits.slice(5, 7), digits.slice(7, 9)].filter(Boolean);
+  return `+998${parts.length ? ` ${parts.join(" ")}` : ""}`;
+}
+
+function focusFirstError(field: keyof ValidationErrors) {
+  requestAnimationFrame(() => {
+    const input = document.getElementById(`calc-${field}`) as HTMLInputElement | null;
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus({ preventScroll: true });
+  });
+}
+
 function Section({
   title,
   children,
@@ -85,7 +103,7 @@ export function Calculator() {
   const lang = (i18n.language?.slice(0, 2) ?? "ru") as "ru" | "uz" | "en";
   const [state, setState] = useState<CalcState>(initialCalcState);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [step, setStep] = useState(1);
 
   const wizardSteps = [
@@ -97,7 +115,7 @@ export function Calculator() {
 
   function goToStep(nextStep: number) {
     setStep(Math.max(1, Math.min(4, nextStep)));
-    setError(false);
+    setValidationErrors({});
     requestAnimationFrame(() => scrollToAnchor("calculator"));
   }
 
@@ -128,6 +146,9 @@ export function Calculator() {
     v: string,
   ) {
     setState((s) => ({ ...s, [k]: v }));
+    if (k === "name" || k === "phone" || k === "email") {
+      setValidationErrors((current) => ({ ...current, [k]: undefined }));
+    }
   }
 
   /* Cart ops */
@@ -231,9 +252,40 @@ export function Calculator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.width, state.activeIndex]);
 
+  function validateConstruction() {
+    const errors: ValidationErrors = {};
+    if (!Number.isFinite(item.width) || item.width < limits.minW || item.width > limits.maxW) {
+      errors.width = t("calc.validation.range", { min: limits.minW, max: limits.maxW });
+    }
+    if (!Number.isFinite(item.height) || item.height < limits.minH || item.height > limits.maxH) {
+      errors.height = t("calc.validation.range", { min: limits.minH, max: limits.maxH });
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+      errors.quantity = t("calc.validation.quantity");
+    }
+    setValidationErrors(errors);
+    const first = (["width", "height", "quantity"] as const).find((field) => errors[field]);
+    if (first) focusFirstError(first);
+    return !first;
+  }
+
+  function continueWizard() {
+    if (step === 1 && !validateConstruction()) return;
+    goToStep(step + 1);
+  }
+
   function submit() {
-    if (!state.name.trim() || !state.phone.trim()) {
-      setError(true);
+    const errors: ValidationErrors = {};
+    if (state.name.trim().length < 2) errors.name = t("calc.validation.name");
+    const phoneDigits = state.phone.replace(/\D/g, "");
+    if (!/^998\d{9}$/.test(phoneDigits)) errors.phone = t("calc.validation.phone");
+    if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim())) {
+      errors.email = t("calc.validation.email");
+    }
+    setValidationErrors(errors);
+    const first = (["name", "phone", "email"] as const).find((field) => errors[field]);
+    if (first) {
+      focusFirstError(first);
       return;
     }
     setSubmitted(true);
@@ -537,16 +589,37 @@ export function Calculator() {
                             )}
                           </span>
                           <input
+                            id={`calc-${k}`}
                             type="number"
                             inputMode="numeric"
                             min={min}
                             max={max}
                             value={item[k]}
-                            onChange={(e) =>
-                              patchActive({ [k]: Number(e.target.value) } as Partial<ProductConfig>)
-                            }
-                            className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange"
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              patchActive({ [k]: value } as Partial<ProductConfig>);
+                              const invalid = !Number.isFinite(value) || value < min || value > max || (k === "quantity" && !Number.isInteger(value));
+                              setValidationErrors((current) => ({
+                                ...current,
+                                [k]: invalid
+                                  ? k === "quantity"
+                                    ? t("calc.validation.quantity")
+                                    : t("calc.validation.range", { min, max })
+                                  : undefined,
+                              }));
+                            }}
+                            aria-invalid={Boolean(validationErrors[k])}
+                            aria-describedby={validationErrors[k] ? `calc-${k}-error` : undefined}
+                            className={cn(
+                              "h-[44px] w-full border bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange",
+                              validationErrors[k] ? "border-orange" : "border-[#DDD]",
+                            )}
                           />
+                          {validationErrors[k] && (
+                            <span id={`calc-${k}-error`} className="mt-1.5 block text-[11px] font-medium text-orange">
+                              {validationErrors[k]}
+                            </span>
+                          )}
                         </label>
                       ))}
                     </div>
@@ -729,39 +802,76 @@ export function Calculator() {
                           {t("calc.name")} *
                         </span>
                         <input
+                          id="calc-name"
                           value={state.name}
+                          autoComplete="name"
                           onChange={(e) => setContact("name", e.target.value)}
+                          onBlur={() => setValidationErrors((current) => ({
+                            ...current,
+                            name: state.name.trim().length < 2 ? t("calc.validation.name") : undefined,
+                          }))}
                           className={cn(
                             "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                            error && !state.name.trim() ? "border-orange" : "border-[#DDD]",
+                            validationErrors.name ? "border-orange" : "border-[#DDD]",
                           )}
+                          aria-invalid={Boolean(validationErrors.name)}
+                          aria-describedby={validationErrors.name ? "calc-name-error" : undefined}
                         />
+                        {validationErrors.name && <span id="calc-name-error" className="mt-1.5 block text-[11px] font-medium text-orange">{validationErrors.name}</span>}
                       </label>
                       <label className="block">
                         <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
                           {t("calc.phone")} *
                         </span>
                         <input
+                          id="calc-phone"
                           value={state.phone}
                           inputMode="tel"
-                          placeholder="+998"
-                          onChange={(e) => setContact("phone", e.target.value)}
+                          autoComplete="tel"
+                          placeholder="+998 90 123 45 67"
+                          onFocus={() => {
+                            if (!state.phone) setContact("phone", "+998 ");
+                          }}
+                          onChange={(e) => setContact("phone", formatUzPhone(e.target.value))}
+                          onBlur={() => setValidationErrors((current) => ({
+                            ...current,
+                            phone: /^998\d{9}$/.test(state.phone.replace(/\D/g, ""))
+                              ? undefined
+                              : t("calc.validation.phone"),
+                          }))}
                           className={cn(
                             "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
-                            error && !state.phone.trim() ? "border-orange" : "border-[#DDD]",
+                            validationErrors.phone ? "border-orange" : "border-[#DDD]",
                           )}
+                          aria-invalid={Boolean(validationErrors.phone)}
+                          aria-describedby={validationErrors.phone ? "calc-phone-error" : undefined}
                         />
+                        {validationErrors.phone && <span id="calc-phone-error" className="mt-1.5 block text-[11px] font-medium text-orange">{validationErrors.phone}</span>}
                       </label>
                       <label className="block">
                         <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
                           Email
                         </span>
                         <input
+                          id="calc-email"
                           type="email"
                           value={state.email}
+                          autoComplete="email"
                           onChange={(e) => setContact("email", e.target.value)}
-                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                          onBlur={() => setValidationErrors((current) => ({
+                            ...current,
+                            email: state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim())
+                              ? t("calc.validation.email")
+                              : undefined,
+                          }))}
+                          className={cn(
+                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            validationErrors.email ? "border-orange" : "border-[#DDD]",
+                          )}
+                          aria-invalid={Boolean(validationErrors.email)}
+                          aria-describedby={validationErrors.email ? "calc-email-error" : undefined}
                         />
+                        {validationErrors.email && <span id="calc-email-error" className="mt-1.5 block text-[11px] font-medium text-orange">{validationErrors.email}</span>}
                       </label>
                       <label className="block">
                         <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
@@ -785,11 +895,6 @@ export function Calculator() {
                         className="w-full border border-[#DDD] bg-white px-3.5 py-3 text-[14px] outline-none focus:border-orange"
                       />
                     </label>
-                    {error && (
-                      <p className="mt-2 text-[13px] font-medium text-orange">
-                        {t("calc.required")}
-                      </p>
-                    )}
                     <div className="mt-5 border-t border-[#ECECEC] pt-5">
                       <button
                         type="button"
@@ -811,7 +916,7 @@ export function Calculator() {
                       </button>
                     ) : <span />}
                     {step < 4 && (
-                      <button type="button" onClick={() => goToStep(step + 1)} className="bg-orange px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d">
+                      <button type="button" onClick={continueWizard} className="bg-orange px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d">
                         {t("calc.next")}
                       </button>
                     )}
@@ -905,7 +1010,7 @@ export function Calculator() {
                 {step < 4 && (
                   <button
                     type="button"
-                    onClick={() => goToStep(step + 1)}
+                    onClick={continueWizard}
                     className="mt-4 hidden w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d lg:block"
                   >
                     {t("calc.next")}

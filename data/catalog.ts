@@ -281,11 +281,12 @@ export const STATS = [
 export const CONTACTS = {
   phone: "+998 99 400 40 40",
   phoneHref: "tel:+998994004040",
+  telegramHref: "https://t.me/+998994004040",
   mapQuery: "Янгиюльский район, улица Тахтакуприк, 18А",
 };
 
 export const SOCIALS = [
-  { key: "telegram", href: "#" },
+  { key: "telegram", href: CONTACTS.telegramHref },
   { key: "instagram", href: "#" },
   { key: "youtube", href: "#" },
 ] as const;
