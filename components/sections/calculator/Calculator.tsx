@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn, formatPrice } from "@/lib/utils";
+import { scrollToAnchor } from "@/lib/scrollToAnchor";
 import { WindowPreview } from "./WindowPreview";
 import { FRAME_PICTO } from "./shapes";
 import {
@@ -85,6 +86,20 @@ export function Calculator() {
   const [state, setState] = useState<CalcState>(initialCalcState);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [step, setStep] = useState(1);
+
+  const wizardSteps = [
+    t("calc.wizard.construction"),
+    t("calc.wizard.configuration"),
+    t("calc.wizard.estimate"),
+    t("calc.wizard.contacts"),
+  ];
+
+  function goToStep(nextStep: number) {
+    setStep(Math.max(1, Math.min(4, nextStep)));
+    setError(false);
+    requestAnimationFrame(() => scrollToAnchor("calculator"));
+  }
 
   /* ------------------------- active item shortcuts ------------------ */
   const item = state.items[state.activeIndex] ?? state.items[0];
@@ -247,6 +262,51 @@ export function Calculator() {
           {t("calc.subtitle")}
         </div>
 
+        {!submitted && (
+          <div className="mb-5 overflow-hidden border border-[#E7E7E7] bg-white px-4 py-4 sm:px-6">
+            <div className="mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-[#777] sm:hidden">
+              <span>{t("calc.wizard.progress", { current: step, total: wizardSteps.length })}</span>
+              <span className="text-orange">{wizardSteps[step - 1]}</span>
+            </div>
+            <div className="relative hidden sm:grid sm:grid-cols-4">
+              <span className="absolute top-4 right-[12.5%] left-[12.5%] h-px bg-[#E5E5E5]" />
+              <span
+                className="absolute top-4 left-[12.5%] h-px bg-orange transition-[width] duration-300"
+                style={{ width: `${((step - 1) / 3) * 75}%` }}
+              />
+              {wizardSteps.map((label, index) => {
+                const number = index + 1;
+                const active = number === step;
+                const complete = number < step;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={number > step}
+                    onClick={() => goToStep(number)}
+                    className="relative z-[1] flex flex-col items-center gap-2 px-2 text-center disabled:cursor-default"
+                  >
+                    <span
+                      className={cn(
+                        "grid size-8 place-items-center rounded-full border text-[12px] font-extrabold transition-colors",
+                        active || complete
+                          ? "border-orange bg-orange text-white"
+                          : "border-[#D8D8D8] bg-white text-[#999]",
+                      )}
+                    >
+                      {complete ? "✓" : number}
+                    </span>
+                    <span className={cn("text-[11px] font-semibold", active ? "text-ink-2" : "text-[#888]")}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[#ECECEC] sm:hidden">
+              <div className="h-full bg-orange transition-[width] duration-300" style={{ width: `${(step / 4) * 100}%` }} />
+            </div>
+          </div>
+        )}
+
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
           {/* ============================== LEFT: configurator ===== */}
           <div className="mx-auto w-full max-w-[760px] border border-[#ECECEC] bg-white p-4 sm:p-6 lg:mx-0 lg:max-w-none">
@@ -325,7 +385,7 @@ export function Calculator() {
 
                 <div className="space-y-5">
                   {/* ---- product tabs ---- */}
-                  <div className="flex gap-2">
+                  {step === 1 && <div className="flex gap-2">
                     {PRODUCTS.map((p) => {
                       const on = item.product === p;
                       return (
@@ -344,9 +404,9 @@ export function Calculator() {
                         </button>
                       );
                     })}
-                  </div>
+                  </div>}
 
-                  {materialTypes.length > 1 && (
+                  {step === 2 && materialTypes.length > 1 && (
                     <Section title={t("calc.material")}>
                       <div className="flex gap-2">
                         {materialTypes.map((mt) => {
@@ -371,7 +431,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {serials.length > 0 && (
+                  {step === 2 && serials.length > 0 && (
                     <Section title={t("calc.profileSerial")}>
                       <div className="flex flex-wrap gap-2">
                         {serials.map((s) => {
@@ -396,7 +456,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  <Section title={t("calc.frame")}>
+                  {step === 1 && <Section title={t("calc.frame")}>
                     <div className="flex flex-wrap gap-2">
                       {availableFrames.map((f) => {
                         const on = item.frame === f;
@@ -420,9 +480,9 @@ export function Calculator() {
                         );
                       })}
                     </div>
-                  </Section>
+                  </Section>}
 
-                  <Section title={t("calc.opening")}>
+                  {step === 1 && <Section title={t("calc.opening")}>
                     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                       {VARIANTS[item.frame].map((v) => {
                         const on = item.variantId === v.id;
@@ -456,9 +516,9 @@ export function Calculator() {
                         );
                       })}
                     </div>
-                  </Section>
+                  </Section>}
 
-                  <Section title={t("calc.sizesTitle")}>
+                  {step === 1 && <Section title={t("calc.sizesTitle")}>
                     <div className="grid gap-3 sm:grid-cols-3">
                       {(
                         [
@@ -490,10 +550,11 @@ export function Calculator() {
                         </label>
                       ))}
                     </div>
-                  </Section>
+                  </Section>}
 
-                  <Section title={t("calc.glass")}>
+                  {step === 2 && <Section title={t("calc.glass")}>
                     <select
+                      aria-label={t("calc.glass")}
                       value={item.glass}
                       onChange={(e) =>
                         patchActive({ glass: e.target.value as ProductConfig["glass"] })
@@ -506,9 +567,9 @@ export function Calculator() {
                         </option>
                       ))}
                     </select>
-                  </Section>
+                  </Section>}
 
-                  {serial && serial.lamination.length > 0 && (
+                  {step === 2 && serial && serial.lamination.length > 0 && (
                     <Section title={t("calc.lamination")}>
                       <div className="flex flex-wrap gap-2">
                         {serial.lamination.map((c) => (
@@ -528,7 +589,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {serial && serial.fittings.length > 0 && (
+                  {step === 2 && serial && serial.fittings.length > 0 && (
                     <Section title={t("calc.fittings")}>
                       <div className="mb-2 flex flex-wrap gap-2">
                         {serial.fittings.map((b) => {
@@ -565,7 +626,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  <Section title={t("calc.components")}>
+                  {step === 2 && <Section title={t("calc.components")}>
                     <div className="space-y-2">
                       {COMPONENTS.map((k) => {
                         const c = item.components[k];
@@ -622,9 +683,46 @@ export function Calculator() {
                         );
                       })}
                     </div>
-                  </Section>
+                  </Section>}
 
-                  <Section title={t("calc.steps.contacts")}>
+                  {step === 3 && (
+                    <div>
+                      <div className="mb-5 border border-orange/25 bg-[#FFF8EF] px-4 py-5 sm:px-6">
+                        <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-orange">
+                          {t("calc.estimate")}
+                        </p>
+                        <p className="mt-2 text-[28px] font-extrabold leading-none text-ink-2 sm:text-[34px]">
+                          {formatPrice(total, i18n.language)} UZS
+                        </p>
+                        <p className="mt-2 text-[12px] text-[#777]">{t("calc.estimateNote")}</p>
+                      </div>
+                      <div className="space-y-2">
+                        {state.items.map((configuredItem, index) => (
+                          <button
+                            key={configuredItem.id}
+                            type="button"
+                            onClick={() => {
+                              setActive(index);
+                              goToStep(1);
+                            }}
+                            className="flex w-full items-center justify-between gap-4 border border-[#E8E8E8] px-4 py-3 text-left transition-colors hover:border-orange"
+                          >
+                            <span>
+                              <span className="block text-[13px] font-bold text-ink-2">{itemLabel(state.items, index, productNames)}</span>
+                              <span className="mt-0.5 block text-[11px] text-[#888]">
+                                {configuredItem.width}×{configuredItem.height} мм · {configuredItem.quantity} {t("calc.wizard.pieces")}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-[13px] font-extrabold text-ink-2">
+                              {formatPrice(estimateItem(configuredItem), i18n.language)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 4 && <Section title={t("calc.steps.contacts")}>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="block">
                         <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
@@ -692,7 +790,32 @@ export function Calculator() {
                         {t("calc.required")}
                       </p>
                     )}
-                  </Section>
+                    <div className="mt-5 border-t border-[#ECECEC] pt-5">
+                      <button
+                        type="button"
+                        onClick={submit}
+                        className="w-full bg-orange px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
+                      >
+                        {t("calc.submit")}
+                      </button>
+                      <p className="mt-2 text-center text-[11px] text-[#999]">
+                        {t("calc.sendMessenger")}
+                      </p>
+                    </div>
+                  </Section>}
+
+                  <div className="flex items-center justify-between gap-3 border-t border-[#ECECEC] pt-5">
+                    {step > 1 ? (
+                      <button type="button" onClick={() => goToStep(step - 1)} className="border border-[#DADADA] px-5 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-2 transition-colors hover:border-orange hover:text-orange">
+                        {t("calc.back")}
+                      </button>
+                    ) : <span />}
+                    {step < 4 && (
+                      <button type="button" onClick={() => goToStep(step + 1)} className="bg-orange px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d">
+                        {t("calc.next")}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -779,13 +902,15 @@ export function Calculator() {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={submit}
-                  className="mt-4 w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
-                >
-                  {t("calc.submit")}
-                </button>
+                {step < 4 && (
+                  <button
+                    type="button"
+                    onClick={() => goToStep(step + 1)}
+                    className="mt-4 hidden w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d lg:block"
+                  >
+                    {t("calc.next")}
+                  </button>
+                )}
                 <p className="mt-2 text-center text-[11px] text-[#999]">
                   {t("calc.estimateNote")}
                 </p>
