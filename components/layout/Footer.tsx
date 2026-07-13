@@ -111,7 +111,7 @@ export function Footer() {
                 scrollToAnchor("calculator");
               }
             }}
-            className="group inline-flex items-center gap-2 bg-orange px-7 py-4 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-all duration-200 hover:bg-orange-d hover:shadow-[0_12px_28px_-10px_rgba(243,147,34,.55)]"
+            className="group inline-flex items-center gap-2 rounded-md bg-orange px-7 py-4 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.42)] transition-all duration-200 hover:bg-orange-d hover:shadow-[0_10px_24px_-16px_rgba(15,15,15,.46)]"
           >
             {t("topbar.cta")}
             <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />

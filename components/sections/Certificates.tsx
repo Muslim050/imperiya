@@ -28,7 +28,7 @@ export function Certificates() {
           type="button"
           aria-label="prev"
           onClick={() => scrollBy(-1)}
-          className="absolute left-2 top-1/2 z-[2] hidden size-[34px] -translate-y-1/2 place-items-center rounded-full border border-[#E0E0E0] bg-white shadow-sm hover:border-orange md:grid"
+          className="absolute left-2 top-1/2 z-[2] hidden size-[34px] -translate-y-1/2 place-items-center rounded-full border border-[#E0E0E0] bg-white shadow-sm transition-colors hover:border-[#BDBDBD] md:grid"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path d="M6 1L2 5l4 4" stroke="#666" strokeWidth="1.6" />
@@ -45,9 +45,9 @@ export function Certificates() {
               key={c.id}
               type="button"
               onClick={() => setLightbox(c)}
-              className="group flex flex-col items-stretch gap-2 border border-[#E6E6E6] bg-white p-3 text-left transition-shadow hover:shadow-[0_12px_28px_-12px_rgba(0,0,0,.18)]"
+              className="group flex flex-col items-stretch gap-2 rounded-lg border border-[#E6E6E6] bg-white p-3 text-left shadow-[0_10px_28px_-26px_rgba(15,15,15,.3)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#D8D8D8] hover:shadow-[0_14px_30px_-24px_rgba(15,15,15,.34)]"
             >
-              <div className="overflow-hidden bg-[#f7f5ef]" style={{ aspectRatio: "0.78 / 1" }}>
+              <div className="overflow-hidden rounded-md bg-[#f7f5ef]" style={{ aspectRatio: "0.78 / 1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={c.img}
@@ -68,7 +68,7 @@ export function Certificates() {
           type="button"
           aria-label="next"
           onClick={() => scrollBy(1)}
-          className="absolute right-2 top-1/2 z-[2] hidden size-[34px] -translate-y-1/2 place-items-center rounded-full border border-[#E0E0E0] bg-white shadow-sm hover:border-orange md:grid"
+          className="absolute right-2 top-1/2 z-[2] hidden size-[34px] -translate-y-1/2 place-items-center rounded-full border border-[#E0E0E0] bg-white shadow-sm transition-colors hover:border-[#BDBDBD] md:grid"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path d="M4 1l4 4-4 4" stroke="#666" strokeWidth="1.6" />
@@ -92,7 +92,7 @@ export function Certificates() {
               type="button"
               onClick={() => setLightbox(null)}
               aria-label="close"
-              className="absolute -right-2 -top-12 grid size-9 place-items-center bg-white text-ink-2 transition-colors hover:bg-orange hover:text-white sm:-right-12 sm:top-0"
+              className="absolute -right-2 -top-12 grid size-9 place-items-center rounded-md bg-white text-ink-2 shadow-sm transition-colors hover:bg-orange hover:text-white sm:-right-12 sm:top-0"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" />
@@ -102,7 +102,7 @@ export function Certificates() {
             <img
               src={lightbox.img}
               alt={t(`certificates.items.${lightbox.titleKey}`)}
-              className="block max-h-[85vh] w-auto bg-white object-contain"
+              className="block max-h-[85vh] w-auto rounded-md bg-white object-contain"
             />
             <p className="mt-2 text-center text-[12px] font-semibold text-white">
               {t(`certificates.items.${lightbox.titleKey}`)}

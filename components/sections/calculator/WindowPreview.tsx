@@ -29,15 +29,16 @@ export function WindowPreview({
       <div className="absolute top-1/2 -right-[26px] -translate-y-1/2 rotate-[-90deg] text-[11px] text-[#777]">
         {height || 0} мм
       </div>
-      <div className="grid aspect-square place-items-center bg-[linear-gradient(180deg,#eef3f6,#dde6ec)] p-3">
+      <div className="grid h-[170px] min-h-0 place-items-center overflow-hidden rounded-md bg-[linear-gradient(180deg,#eef3f6,#dde6ec)] p-3 sm:h-auto sm:aspect-[4/3]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
+          key={imageSrc}
           src={imageSrc}
           alt={alt}
           className={
             narrow
-              ? "block h-auto max-h-[78%] w-auto max-w-[58%] object-contain"
-              : "block size-full object-contain"
+              ? "block h-auto max-h-[78%] w-auto max-w-[58%] animate-[preview-in_320ms_ease-out] object-contain motion-reduce:animate-none"
+              : "block size-full animate-[preview-in_320ms_ease-out] object-contain motion-reduce:animate-none"
           }
           loading="lazy"
           decoding="async"

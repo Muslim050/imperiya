@@ -116,7 +116,7 @@ export function Header() {
                 scrollToAnchor("calculator");
               }
             }}
-            className="group hidden items-center gap-2 bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-all duration-200 hover:bg-orange-d hover:shadow-[0_8px_20px_-8px_rgba(243,147,34,.55)] sm:inline-flex"
+            className="group hidden items-center gap-2 rounded-md bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.38)] transition-all duration-200 hover:bg-orange-d hover:shadow-[0_10px_24px_-16px_rgba(15,15,15,.42)] sm:inline-flex"
           >
             {t("topbar.cta")}
             <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -126,7 +126,7 @@ export function Header() {
             type="button"
             aria-label="Menu"
             onClick={() => setMobileOpen((v) => !v)}
-            className="grid size-10 place-items-center border border-line transition-colors hover:border-orange lg:hidden"
+            className="grid size-10 place-items-center rounded-md border border-line transition-colors hover:border-[#bdbdbd] lg:hidden"
           >
             <span className="space-y-[5px]">
               <span className="block h-0.5 w-5 bg-ink" />
@@ -217,7 +217,7 @@ export function Header() {
                   setTimeout(() => scrollToAnchor("calculator"), 50);
                 }
               }}
-              className="inline-flex items-center gap-2 bg-orange px-5 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white"
+              className="inline-flex items-center gap-2 rounded-md bg-orange px-5 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.38)]"
             >
               {t("topbar.cta")}
               <ChevronRight className="size-3.5" />

@@ -48,7 +48,7 @@ export function LanguageSwitcher({ tone = "dark" }: { tone?: "light" | "dark" })
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 z-50 mt-2 w-24 overflow-hidden border border-line bg-white py-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-24 overflow-hidden rounded-lg border border-line bg-white py-1 shadow-[0_14px_32px_-20px_rgba(15,15,15,.34)]"
         >
           {LANGUAGES.map((l) => (
             <li key={l.code}>

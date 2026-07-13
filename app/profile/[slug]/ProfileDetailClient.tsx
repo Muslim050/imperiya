@@ -25,7 +25,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
           </h1>
           <Link
             href="/#profiles"
-            className="mt-6 inline-flex bg-orange px-6 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:bg-orange-d"
+            className="mt-6 inline-flex rounded-md bg-orange px-6 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.38)] hover:bg-orange-d"
           >
             {t("notFound.home")}
           </Link>
@@ -47,7 +47,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
 
         <div className="mt-6 grid gap-8 lg:grid-cols-2">
           <div
-            className="relative grid place-items-center overflow-hidden border border-[#1f1f1f]"
+            className="relative grid place-items-center overflow-hidden rounded-lg border border-[#1f1f1f] shadow-[0_16px_34px_-26px_rgba(15,15,15,.42)]"
             style={{
               background: "radial-gradient(80% 80% at 50% 60%,#3a3a3a,#0c0c0c)",
             }}
@@ -104,7 +104,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
                   scrollToAnchor("calculator");
                 }
               }}
-              className="mt-8 inline-flex w-fit bg-orange px-7 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:bg-orange-d"
+              className="mt-8 inline-flex w-fit rounded-md bg-orange px-7 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.38)] hover:bg-orange-d"
             >
               {t("topbar.cta")}
             </Link>

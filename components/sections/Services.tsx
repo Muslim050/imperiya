@@ -60,7 +60,7 @@ export function Services() {
               key={s}
               href="/#contacts"
               onClick={onContactsClick}
-              className="group relative block overflow-hidden text-white"
+              className="group relative block overflow-hidden rounded-lg text-white shadow-[0_12px_28px_-24px_rgba(15,15,15,.38)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-24px_rgba(15,15,15,.45)]"
               style={{ aspectRatio: "1 / 0.95" }}
             >
               {/* tint shown while the image is fetching */}
@@ -110,7 +110,7 @@ export function Services() {
           <Link
             href="/#contacts"
             onClick={onContactsClick}
-            className="border border-[#DDD] bg-white px-[26px] py-3 text-[12px] font-bold uppercase tracking-[0.1em] transition-colors hover:border-orange hover:text-orange"
+            className="rounded-md border border-[#DDD] bg-white px-[26px] py-3 text-[12px] font-bold uppercase tracking-[0.1em] shadow-[0_8px_22px_-20px_rgba(15,15,15,.3)] transition-colors hover:border-orange hover:text-orange"
           >
             {t("services.all")}
           </Link>

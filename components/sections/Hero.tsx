@@ -140,14 +140,14 @@ export function Hero() {
             <Link
               href="/#calculator"
               onClick={onAnchorClick("calculator")}
-              className="inline-flex items-center justify-center bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
+              className="inline-flex items-center justify-center rounded-md bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(0,0,0,.48)] transition-colors hover:bg-orange-d"
             >
               {t("hero.ctaCalc")}
             </Link>
             <Link
               href="/#contacts"
               onClick={onAnchorClick("contacts")}
-              className="inline-flex items-center justify-center border border-white/35 px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10"
+              className="inline-flex items-center justify-center rounded-md border border-white/35 px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10"
             >
               {t("hero.ctaConsult")}
             </Link>

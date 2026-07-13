@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn, formatPrice } from "@/lib/utils";
 import { scrollToAnchor } from "@/lib/scrollToAnchor";
@@ -35,7 +35,48 @@ import {
 } from "@/data/calculator";
 
 const SECTION_TITLE =
-  "m-0 mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-2";
+  "m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.12em] text-ink-2";
+
+const LAST_STEP = 7;
+const DRAFT_STORAGE_KEY = "imperiya-calculator-draft-v1";
+const DRAFT_VERSION = 1;
+
+type CalculatorDraft = {
+  version: number;
+  state: CalcState;
+  step: number;
+};
+
+function createRequestNumber() {
+  const now = new Date();
+  const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+    .map((part, index) => index === 0 ? String(part) : String(part).padStart(2, "0"))
+    .join("");
+  const suffix = typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID().slice(0, 4).toUpperCase()
+    : Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `IMP-${date}-${suffix}`;
+}
+
+function SelectedCheck({ on }: { on: boolean }) {
+  if (!on) return null;
+  return (
+    <span
+      aria-hidden
+      className="absolute right-2 top-2 grid size-5 place-items-center rounded-full bg-orange text-white shadow-sm"
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+        <path
+          d="M2.2 6.2 4.8 8.6 9.9 3.4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
 
 type ValidationErrors = Partial<Record<"width" | "height" | "quantity" | "name" | "phone" | "email", string>>;
 
@@ -87,14 +128,17 @@ function ColorSwatchButton({
       onClick={onClick}
       title={sw.name}
       aria-label={sw.name}
+      aria-pressed={on}
       className={cn(
-        "relative size-[34px] overflow-hidden border bg-cover bg-center transition-all",
+        "relative size-11 overflow-hidden rounded-md border bg-cover bg-center transition-all",
         on
           ? "border-[#ddd] outline outline-[1.5px] outline-orange outline-offset-2"
           : "border-[#ddd] hover:outline hover:outline-[1px] hover:outline-[#bbb] hover:outline-offset-1",
       )}
       style={{ backgroundImage: `url(${sw.img})` }}
-    />
+    >
+      <SelectedCheck on={on} />
+    </button>
   );
 }
 
@@ -103,18 +147,73 @@ export function Calculator() {
   const lang = (i18n.language?.slice(0, 2) ?? "ru") as "ru" | "uz" | "en";
   const [state, setState] = useState<CalcState>(initialCalcState);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [requestNumber, setRequestNumber] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [step, setStep] = useState(1);
+  const feedbackTimerRef = useRef<number | null>(null);
+  const submitTimerRef = useRef<number | null>(null);
+  const successRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw) as CalculatorDraft;
+        if (
+          draft.version === DRAFT_VERSION &&
+          Array.isArray(draft.state?.items) &&
+          draft.state.items.length > 0
+        ) {
+          setState(draft.state);
+          setStep(Math.max(1, Math.min(LAST_STEP, draft.step || 1)));
+        }
+      }
+    } catch {
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } finally {
+      setDraftReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady || submitted) return;
+    const draft: CalculatorDraft = {
+      version: DRAFT_VERSION,
+      state,
+      step,
+    };
+    try {
+      window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage can be unavailable in strict privacy modes; the in-memory
+      // wizard state still keeps every field when moving between steps.
+    }
+  }, [draftReady, state, step, submitted]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current !== null) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+    if (submitTimerRef.current !== null) {
+      window.clearTimeout(submitTimerRef.current);
+    }
+  }, []);
 
   const wizardSteps = [
-    t("calc.wizard.construction"),
+    t("calc.wizard.product"),
+    t("calc.wizard.frame"),
+    t("calc.wizard.opening"),
+    t("calc.wizard.sizes"),
     t("calc.wizard.configuration"),
     t("calc.wizard.estimate"),
     t("calc.wizard.contacts"),
   ];
 
   function goToStep(nextStep: number) {
-    setStep(Math.max(1, Math.min(4, nextStep)));
+    setStep(Math.max(1, Math.min(LAST_STEP, nextStep)));
     setValidationErrors({});
     requestAnimationFrame(() => scrollToAnchor("calculator"));
   }
@@ -153,11 +252,21 @@ export function Calculator() {
 
   /* Cart ops */
   function addItem(productHint: Product = "window") {
-    setState((s) => {
-      if (s.items.length >= MAX_ITEMS) return s;
-      const fresh = defaultProductConfig({ product: productHint });
-      return { ...s, items: [...s.items, fresh], activeIndex: s.items.length };
+    if (!canAdd) return;
+    const fresh = defaultProductConfig({ product: productHint });
+    setState({
+      ...state,
+      items: [...state.items, fresh],
+      activeIndex: state.items.length,
     });
+    setFeedback(t("calc.itemAdded"));
+    if (feedbackTimerRef.current !== null) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setFeedback(null);
+      feedbackTimerRef.current = null;
+    }, 2400);
   }
   function removeItem(idx: number) {
     setState((s) => {
@@ -270,11 +379,12 @@ export function Calculator() {
   }
 
   function continueWizard() {
-    if (step === 1 && !validateConstruction()) return;
+    if (step === 4 && !validateConstruction()) return;
     goToStep(step + 1);
   }
 
   function submit() {
+    if (submitting) return;
     const errors: ValidationErrors = {};
     if (state.name.trim().length < 2) errors.name = t("calc.validation.name");
     const phoneDigits = state.phone.replace(/\D/g, "");
@@ -288,7 +398,33 @@ export function Calculator() {
       focusFirstError(first);
       return;
     }
-    setSubmitted(true);
+    setSubmitting(true);
+    submitTimerRef.current = window.setTimeout(() => {
+      setRequestNumber(createRequestNumber());
+      setSubmitted(true);
+      setSubmitting(false);
+      submitTimerRef.current = null;
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      requestAnimationFrame(() => {
+        scrollToAnchor("calculator");
+        successRef.current?.focus({ preventScroll: true });
+      });
+    }, 900);
+  }
+
+  function resetCalculator() {
+    setState({
+      ...initialCalcState,
+      items: [defaultProductConfig()],
+      activeIndex: 0,
+    });
+    setStep(1);
+    setSubmitted(false);
+    setSubmitting(false);
+    setRequestNumber("");
+    setValidationErrors({});
+    window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    requestAnimationFrame(() => scrollToAnchor("calculator"));
   }
 
   /* Derivations off the active item */
@@ -315,66 +451,74 @@ export function Calculator() {
         </div>
 
         {!submitted && (
-          <div className="mb-5 overflow-hidden border border-[#E7E7E7] bg-white px-4 py-4 sm:px-6">
-            <div className="mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-[#777] sm:hidden">
-              <span>{t("calc.wizard.progress", { current: step, total: wizardSteps.length })}</span>
-              <span className="text-orange">{wizardSteps[step - 1]}</span>
+          <div className="mb-5 overflow-hidden rounded-lg border border-[#E7E7E7] bg-white px-4 py-4 shadow-[0_12px_32px_-28px_rgba(0,0,0,.35)] sm:px-6">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-[#777]">
+                {t("calc.wizard.progress", { current: step, total: wizardSteps.length })}
+              </span>
+              <span className="text-right text-[13px] font-extrabold text-orange">
+                {wizardSteps[step - 1]}
+              </span>
             </div>
-            <div className="relative hidden sm:grid sm:grid-cols-4">
-              <span className="absolute top-4 right-[12.5%] left-[12.5%] h-px bg-[#E5E5E5]" />
-              <span
-                className="absolute top-4 left-[12.5%] h-px bg-orange transition-[width] duration-300"
-                style={{ width: `${((step - 1) / 3) * 75}%` }}
-              />
-              {wizardSteps.map((label, index) => {
-                const number = index + 1;
-                const active = number === step;
-                const complete = number < step;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={number > step}
-                    onClick={() => goToStep(number)}
-                    className="relative z-[1] flex flex-col items-center gap-2 px-2 text-center disabled:cursor-default"
-                  >
-                    <span
-                      className={cn(
-                        "grid size-8 place-items-center rounded-full border text-[12px] font-extrabold transition-colors",
-                        active || complete
-                          ? "border-orange bg-orange text-white"
-                          : "border-[#D8D8D8] bg-white text-[#999]",
-                      )}
-                    >
-                      {complete ? "✓" : number}
-                    </span>
-                    <span className={cn("text-[11px] font-semibold", active ? "text-ink-2" : "text-[#888]")}>{label}</span>
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-7 gap-1.5" aria-hidden>
+              {wizardSteps.map((label, index) => (
+                <span
+                  key={label}
+                  className={cn(
+                    "h-1.5 rounded-full transition-colors duration-300",
+                    index < step ? "bg-orange" : "bg-[#ECECEC]",
+                  )}
+                />
+              ))}
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[#ECECEC] sm:hidden">
-              <div className="h-full bg-orange transition-[width] duration-300" style={{ width: `${(step / 4) * 100}%` }} />
-            </div>
+            {draftReady && (
+              <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px] font-semibold text-[#6f7f68]">
+                <span aria-hidden>✓</span>
+                {t("calc.draftSaved")}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
+        <div className={cn("grid items-start gap-6", !submitted && "lg:grid-cols-[1fr_360px]")}>
           {/* ============================== LEFT: configurator ===== */}
-          <div className="mx-auto w-full max-w-[760px] border border-[#ECECEC] bg-white p-4 sm:p-6 lg:mx-0 lg:max-w-none">
+          <div className="order-2 mx-auto w-full max-w-[760px] rounded-lg border border-[#ECECEC] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(0,0,0,.35)] sm:p-6 lg:order-1 lg:mx-0 lg:max-w-none">
             {submitted ? (
-              <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-                <span className="grid size-14 place-items-center rounded-full bg-[#FFF6EB] text-orange">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <div
+                ref={successRef}
+                tabIndex={-1}
+                className="flex min-h-[440px] flex-col items-center justify-center px-3 text-center outline-none"
+                aria-live="polite"
+              >
+                <span className="grid size-16 animate-[success-pop_420ms_ease-out] place-items-center rounded-full bg-[#FFF6EB] text-orange motion-reduce:animate-none">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
                     <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <p className="mt-4 max-w-sm text-base font-semibold text-ink-2">
+                <h3 className="mt-5 max-w-md text-[20px] font-extrabold text-ink-2">
                   {t("calc.success")}
+                </h3>
+                <div className="mt-5 w-full max-w-sm rounded-lg border border-orange/20 bg-[#FFF8EF] px-5 py-4">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.1em] text-[#888]">
+                    {t("calc.requestNumber")}
+                  </span>
+                  <strong className="mt-1 block text-[22px] tracking-[0.04em] text-ink-2">
+                    {requestNumber}
+                  </strong>
+                </div>
+                <p className="mt-4 max-w-sm text-[14px] font-semibold leading-relaxed text-[#555]">
+                  {t("calc.successTime")}
                 </p>
-                <p className="mt-2 text-[12px] text-[#888]">
+                <p className="mt-1 text-[12px] text-[#888]">
                   {t("calc.successItems", { count: state.items.length })}
                 </p>
+                <button
+                  type="button"
+                  onClick={resetCalculator}
+                  className="mt-6 min-h-12 rounded-md border border-[#DADADA] px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-2 transition-colors hover:border-orange hover:text-orange"
+                >
+                  {t("calc.newCalculation")}
+                </button>
               </div>
             ) : (
               <>
@@ -388,7 +532,7 @@ export function Calculator() {
                         <div
                           key={it.id}
                           className={cn(
-                            "group/tab flex items-stretch border transition-colors",
+                            "group/tab flex items-stretch overflow-hidden rounded-md border transition-colors",
                             on
                               ? "border-orange bg-[#FFF6EB]"
                               : "border-[#E4E4E4] bg-white hover:border-[#bdbdbd]",
@@ -424,7 +568,7 @@ export function Calculator() {
                       <button
                         type="button"
                         onClick={() => addItem(item.product)}
-                        className="flex items-center gap-1.5 border border-dashed border-[#cfcfcf] px-3 py-2 text-[12px] font-bold uppercase tracking-[0.04em] text-[#666] transition-colors hover:border-orange hover:text-orange"
+                        className="flex items-center gap-1.5 rounded-md border border-dashed border-[#cfcfcf] px-3 py-2 text-[12px] font-bold uppercase tracking-[0.04em] text-[#666] transition-colors hover:border-orange hover:text-orange"
                       >
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                           <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -437,28 +581,30 @@ export function Calculator() {
 
                 <div className="space-y-5">
                   {/* ---- product tabs ---- */}
-                  {step === 1 && <div className="flex gap-2">
+                  {step === 1 && <div className="grid grid-cols-2 gap-3">
                     {PRODUCTS.map((p) => {
                       const on = item.product === p;
                       return (
                         <button
                           key={p}
                           type="button"
+                          aria-pressed={on}
                           onClick={() => changeProduct(p)}
                           className={cn(
-                            "flex-1 border px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors",
+                            "relative min-h-16 rounded-md border px-4 py-3 text-[14px] font-bold uppercase tracking-[0.05em] transition-all",
                             on
                               ? "border-orange bg-orange text-white"
                               : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
                           )}
                         >
                           {t(`calc.products.${p}`)}
+                          <SelectedCheck on={on} />
                         </button>
                       );
                     })}
                   </div>}
 
-                  {step === 2 && materialTypes.length > 1 && (
+                  {step === 5 && materialTypes.length > 1 && (
                     <Section title={t("calc.material")}>
                       <div className="flex gap-2">
                         {materialTypes.map((mt) => {
@@ -467,15 +613,17 @@ export function Calculator() {
                             <button
                               key={mt}
                               type="button"
+                              aria-pressed={on}
                               onClick={() => changeMaterial(mt)}
                               className={cn(
-                                "border px-4 py-2.5 text-[13px] font-semibold transition-colors",
+                                "relative min-h-11 rounded-md border px-4 py-2.5 pr-10 text-[13px] font-semibold transition-colors",
                                 on
                                   ? "border-ink-2 bg-ink-2 text-white"
                                   : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
                               )}
                             >
                               {t(`calc.materials.${mt}`)}
+                              <SelectedCheck on={on} />
                             </button>
                           );
                         })}
@@ -483,7 +631,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {step === 2 && serials.length > 0 && (
+                  {step === 5 && serials.length > 0 && (
                     <Section title={t("calc.profileSerial")}>
                       <div className="flex flex-wrap gap-2">
                         {serials.map((s) => {
@@ -492,15 +640,17 @@ export function Calculator() {
                             <button
                               key={s.id}
                               type="button"
+                              aria-pressed={on}
                               onClick={() => changeSerial(s.id)}
                               className={cn(
-                                "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                                "relative min-h-11 rounded-md border px-3.5 py-2 pr-10 text-[12px] font-semibold transition-colors",
                                 on
                                   ? "border-orange bg-[#FFF6EB] text-[#111]"
                                   : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
                               )}
                             >
                               {s.name}
+                              <SelectedCheck on={on} />
                             </button>
                           );
                         })}
@@ -508,17 +658,18 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {step === 1 && <Section title={t("calc.frame")}>
-                    <div className="flex flex-wrap gap-2">
+                  {step === 2 && <Section title={t("calc.frame")}>
+                    <div className="grid gap-3 sm:grid-cols-3">
                       {availableFrames.map((f) => {
                         const on = item.frame === f;
                         return (
                           <button
                             key={f}
                             type="button"
+                            aria-pressed={on}
                             onClick={() => changeFrame(f)}
                             className={cn(
-                              "flex items-center gap-2.5 border px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
+                              "relative flex min-h-16 items-center justify-center gap-2.5 rounded-md border px-3.5 py-3 pr-10 text-[13px] font-semibold transition-all",
                               on
                                 ? "border-orange bg-[#FFF6EB] text-[#111]"
                                 : "border-[#EFEFEF] text-[#3a3a3a] hover:border-[#cfcfcf]",
@@ -528,24 +679,26 @@ export function Calculator() {
                               {FRAME_PICTO[f]}
                             </span>
                             {t(`calc.frames.${f}`)}
+                            <SelectedCheck on={on} />
                           </button>
                         );
                       })}
                     </div>
                   </Section>}
 
-                  {step === 1 && <Section title={t("calc.opening")}>
-                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {step === 3 && <Section title={t("calc.opening")}>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                       {VARIANTS[item.frame].map((v) => {
                         const on = item.variantId === v.id;
                         return (
                           <button
                             key={v.id}
                             type="button"
+                            aria-pressed={on}
                             onClick={() => patchActive({ variantId: v.id })}
                             title={v.name[lang] ?? v.name.ru}
                             className={cn(
-                              "flex flex-col items-center gap-1.5 border bg-white p-2 text-center transition-colors",
+                              "relative flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-md border bg-white p-3 text-center transition-all",
                               on
                                 ? "border-orange ring-1 ring-orange/40"
                                 : "border-[#EFEFEF] hover:border-[#cfcfcf]",
@@ -561,16 +714,17 @@ export function Calculator() {
                               decoding="async"
                               className="block h-[60px] w-auto object-contain"
                             />
-                            <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-[#444]">
+                            <span className="line-clamp-2 text-[12px] font-semibold leading-tight text-[#444]">
                               {v.name[lang] ?? v.name.ru}
                             </span>
+                            <SelectedCheck on={on} />
                           </button>
                         );
                       })}
                     </div>
                   </Section>}
 
-                  {step === 1 && <Section title={t("calc.sizesTitle")}>
+                  {step === 4 && <Section title={t("calc.sizesTitle")}>
                     <div className="grid gap-3 sm:grid-cols-3">
                       {(
                         [
@@ -580,7 +734,7 @@ export function Calculator() {
                         ] as const
                       ).map(([k, label, min, max]) => (
                         <label key={k} className="block">
-                          <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
+                          <span className="mb-1.5 block text-[12px] font-semibold text-[#666]">
                             {label}{" "}
                             {k !== "quantity" && (
                               <span className="text-[#aaa]">
@@ -611,7 +765,7 @@ export function Calculator() {
                             aria-invalid={Boolean(validationErrors[k])}
                             aria-describedby={validationErrors[k] ? `calc-${k}-error` : undefined}
                             className={cn(
-                              "h-[44px] w-full border bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none focus:border-orange",
+                              "h-[44px] w-full rounded-md border bg-white px-3.5 text-[15px] font-semibold text-[#222] outline-none transition-colors focus:border-orange",
                               validationErrors[k] ? "border-orange" : "border-[#DDD]",
                             )}
                           />
@@ -625,14 +779,14 @@ export function Calculator() {
                     </div>
                   </Section>}
 
-                  {step === 2 && <Section title={t("calc.glass")}>
+                  {step === 5 && <Section title={t("calc.glass")}>
                     <select
                       aria-label={t("calc.glass")}
                       value={item.glass}
                       onChange={(e) =>
                         patchActive({ glass: e.target.value as ProductConfig["glass"] })
                       }
-                      className="h-[44px] w-full appearance-none border border-[#DDD] bg-white px-3.5 text-[13px] font-medium text-[#222] outline-none focus:border-orange"
+                      className="h-[44px] w-full appearance-none rounded-md border border-[#DDD] bg-white px-3.5 text-[13px] font-medium text-[#222] outline-none transition-colors focus:border-orange"
                     >
                       {GLASS_OPTIONS.map((g) => (
                         <option key={g} value={g}>
@@ -642,7 +796,7 @@ export function Calculator() {
                     </select>
                   </Section>}
 
-                  {step === 2 && serial && serial.lamination.length > 0 && (
+                  {step === 5 && serial && serial.lamination.length > 0 && (
                     <Section title={t("calc.lamination")}>
                       <div className="flex flex-wrap gap-2">
                         {serial.lamination.map((c) => (
@@ -662,7 +816,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {step === 2 && serial && serial.fittings.length > 0 && (
+                  {step === 5 && serial && serial.fittings.length > 0 && (
                     <Section title={t("calc.fittings")}>
                       <div className="mb-2 flex flex-wrap gap-2">
                         {serial.fittings.map((b) => {
@@ -671,15 +825,17 @@ export function Calculator() {
                             <button
                               key={b.id}
                               type="button"
+                              aria-pressed={on}
                               onClick={() => changeFitting(b.id)}
                               className={cn(
-                                "border px-3.5 py-2 text-[12px] font-semibold transition-colors",
+                                "relative min-h-11 rounded-md border px-3.5 py-2 pr-10 text-[12px] font-semibold transition-colors",
                                 on
                                   ? "border-orange bg-[#FFF6EB] text-[#111]"
                                   : "border-[#E4E4E4] bg-white text-[#4a4a4a] hover:border-[#bdbdbd]",
                               )}
                             >
                               {b.name}
+                              <SelectedCheck on={on} />
                             </button>
                           );
                         })}
@@ -699,7 +855,7 @@ export function Calculator() {
                     </Section>
                   )}
 
-                  {step === 2 && <Section title={t("calc.components")}>
+                  {step === 5 && <Section title={t("calc.components")}>
                     <div className="space-y-2">
                       {COMPONENTS.map((k) => {
                         const c = item.components[k];
@@ -707,7 +863,7 @@ export function Calculator() {
                           <div
                             key={k}
                             className={cn(
-                              "flex items-center gap-3 border px-3 py-2.5 transition-colors",
+                              "flex items-center gap-3 rounded-md border px-3 py-2.5 transition-colors",
                               c.enabled
                                 ? "border-orange bg-[#FFF6EB]"
                                 : "border-[#EFEFEF] hover:border-[#cfcfcf]",
@@ -716,7 +872,7 @@ export function Calculator() {
                             <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[#222]">
                               <span
                                 className={cn(
-                                  "grid size-4 place-items-center border-[1.5px]",
+                                  "grid size-4 place-items-center rounded-sm border-[1.5px]",
                                   c.enabled
                                     ? "border-ink-2 bg-ink-2 text-white"
                                     : "border-[#1a1a1a] bg-white",
@@ -748,7 +904,7 @@ export function Calculator() {
                                   onChange={(e) =>
                                     changeComponent(k, { width: Number(e.target.value) })
                                   }
-                                  className="h-8 w-[90px] border border-[#DDD] bg-white px-2 text-[13px] font-semibold text-[#222] outline-none focus:border-orange"
+                                  className="h-8 w-[90px] rounded-md border border-[#DDD] bg-white px-2 text-[13px] font-semibold text-[#222] outline-none transition-colors focus:border-orange"
                                 />
                               </label>
                             )}
@@ -758,13 +914,13 @@ export function Calculator() {
                     </div>
                   </Section>}
 
-                  {step === 3 && (
+                  {step === 6 && (
                     <div>
-                      <div className="mb-5 border border-orange/25 bg-[#FFF8EF] px-4 py-5 sm:px-6">
+                      <div className="mb-5 rounded-lg border border-orange/25 bg-[#FFF8EF] px-4 py-5 sm:px-6">
                         <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-orange">
                           {t("calc.estimate")}
                         </p>
-                        <p className="mt-2 text-[28px] font-extrabold leading-none text-ink-2 sm:text-[34px]">
+                        <p key={total} className="mt-2 animate-[price-pop_280ms_ease-out] text-[28px] font-extrabold leading-none text-ink-2 motion-reduce:animate-none sm:text-[34px]">
                           {formatPrice(total, i18n.language)} UZS
                         </p>
                         <p className="mt-2 text-[12px] text-[#777]">{t("calc.estimateNote")}</p>
@@ -778,7 +934,7 @@ export function Calculator() {
                               setActive(index);
                               goToStep(1);
                             }}
-                            className="flex w-full items-center justify-between gap-4 border border-[#E8E8E8] px-4 py-3 text-left transition-colors hover:border-orange"
+                            className="flex w-full items-center justify-between gap-4 rounded-md border border-[#E8E8E8] px-4 py-3 text-left transition-colors hover:border-orange"
                           >
                             <span>
                               <span className="block text-[13px] font-bold text-ink-2">{itemLabel(state.items, index, productNames)}</span>
@@ -795,7 +951,7 @@ export function Calculator() {
                     </div>
                   )}
 
-                  {step === 4 && <Section title={t("calc.steps.contacts")}>
+                  {step === 7 && <Section title={t("calc.steps.contacts")}>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="block">
                         <span className="mb-1.5 block text-[11px] font-semibold text-[#666]">
@@ -811,7 +967,7 @@ export function Calculator() {
                             name: state.name.trim().length < 2 ? t("calc.validation.name") : undefined,
                           }))}
                           className={cn(
-                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
                             validationErrors.name ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.name)}
@@ -840,7 +996,7 @@ export function Calculator() {
                               : t("calc.validation.phone"),
                           }))}
                           className={cn(
-                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
                             validationErrors.phone ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.phone)}
@@ -865,7 +1021,7 @@ export function Calculator() {
                               : undefined,
                           }))}
                           className={cn(
-                            "h-[44px] w-full border bg-white px-3.5 text-[14px] outline-none focus:border-orange",
+                            "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
                             validationErrors.email ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.email)}
@@ -880,7 +1036,7 @@ export function Calculator() {
                         <input
                           value={state.address}
                           onChange={(e) => setContact("address", e.target.value)}
-                          className="h-[44px] w-full border border-[#DDD] bg-white px-3.5 text-[14px] outline-none focus:border-orange"
+                          className="h-[44px] w-full rounded-md border border-[#DDD] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange"
                         />
                       </label>
                     </div>
@@ -892,16 +1048,24 @@ export function Calculator() {
                         value={state.comment}
                         onChange={(e) => setContact("comment", e.target.value)}
                         rows={3}
-                        className="w-full border border-[#DDD] bg-white px-3.5 py-3 text-[14px] outline-none focus:border-orange"
+                        className="w-full rounded-md border border-[#DDD] bg-white px-3.5 py-3 text-[14px] outline-none transition-colors focus:border-orange"
                       />
                     </label>
                     <div className="mt-5 border-t border-[#ECECEC] pt-5">
                       <button
                         type="button"
                         onClick={submit}
-                        className="w-full bg-orange px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d"
+                        disabled={submitting}
+                        aria-busy={submitting}
+                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-orange px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d disabled:cursor-wait disabled:opacity-75"
                       >
-                        {t("calc.submit")}
+                        {submitting && (
+                          <span
+                            aria-hidden
+                            className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
+                          />
+                        )}
+                        {submitting ? t("calc.sending") : t("calc.submit")}
                       </button>
                       <p className="mt-2 text-center text-[11px] text-[#999]">
                         {t("calc.sendMessenger")}
@@ -911,12 +1075,12 @@ export function Calculator() {
 
                   <div className="flex items-center justify-between gap-3 border-t border-[#ECECEC] pt-5">
                     {step > 1 ? (
-                      <button type="button" onClick={() => goToStep(step - 1)} className="border border-[#DADADA] px-5 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-2 transition-colors hover:border-orange hover:text-orange">
+                      <button type="button" disabled={submitting} onClick={() => goToStep(step - 1)} className="min-h-12 rounded-md border border-[#DADADA] px-5 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-ink-2 transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-50">
                         {t("calc.back")}
                       </button>
                     ) : <span />}
-                    {step < 4 && (
-                      <button type="button" onClick={continueWizard} className="bg-orange px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d">
+                    {step < LAST_STEP && (
+                      <button type="button" onClick={continueWizard} className="min-h-12 rounded-md bg-orange px-6 py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d">
                         {t("calc.next")}
                       </button>
                     )}
@@ -927,8 +1091,7 @@ export function Calculator() {
           </div>
 
           {/* ========================= RIGHT: preview + cart + CTA */}
-          <div className="mx-auto w-full max-w-[420px] border border-[#ECECEC] bg-white px-4 py-5 sm:px-[22px] sm:py-7 lg:sticky lg:top-[120px] lg:mx-0 lg:max-w-none">
-            {!submitted && (
+          {!submitted && <div className="order-1 mx-auto w-full max-w-[420px] rounded-lg border border-[#ECECEC] bg-white px-4 py-4 shadow-[0_18px_42px_-34px_rgba(0,0,0,.35)] sm:px-[22px] sm:py-6 lg:order-2 lg:sticky lg:top-[120px] lg:mx-0 lg:max-w-none">
               <>
                 <WindowPreview
                   imageSrc={variant.image}
@@ -941,8 +1104,23 @@ export function Calculator() {
                   {variantName}
                 </div>
 
+                {/* Live price stays visible next to the preview on every step. */}
+                <div className="mt-4 flex items-end justify-between rounded-md bg-[#FFF8EF] px-4 py-3">
+                  <span className="pb-0.5 text-[12px] font-semibold text-[#777]">
+                    {t("calc.totalPrice")}
+                  </span>
+                  <b key={total} className="animate-[price-pop_280ms_ease-out] text-[21px] leading-none text-ink-2 motion-reduce:animate-none">
+                    {formatPrice(total, i18n.language)} UZS
+                  </b>
+                </div>
+                {state.items.length > 1 && (
+                  <div className="mt-1 text-right text-[11px] text-[#888]">
+                    {t("calc.currentItem")}: {formatPrice(itemPrice, i18n.language)} UZS
+                  </div>
+                )}
+
                 {/* Cart list — each line is clickable to switch the active item */}
-                <div className="mt-4 border-t border-[#EEE] pt-3">
+                <div className="mt-4 hidden border-t border-[#EEE] pt-3 lg:block">
                   <div className="mb-2 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-2">
                     <span>{t("calc.cart")}</span>
                     <span className="text-[10px] font-medium text-[#999]">
@@ -958,7 +1136,7 @@ export function Calculator() {
                             type="button"
                             onClick={() => setActive(i)}
                             className={cn(
-                              "flex w-full items-baseline justify-between gap-2 border px-2.5 py-2 text-left text-[12px] transition-colors",
+                              "flex w-full items-baseline justify-between gap-2 rounded-md border px-2.5 py-2 text-left text-[12px] transition-colors",
                               on
                                 ? "border-orange bg-[#FFF6EB]"
                                 : "border-[#ECECEC] bg-white hover:border-[#cfcfcf]",
@@ -978,52 +1156,25 @@ export function Calculator() {
                       );
                     })}
                   </ul>
-                  {canAdd && (
-                    <button
-                      type="button"
-                      onClick={() => addItem(item.product)}
-                      className="mt-2 flex w-full items-center justify-center gap-1.5 border border-dashed border-[#cfcfcf] py-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[#666] transition-colors hover:border-orange hover:text-orange"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
-                        <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                      </svg>
-                      {t("calc.addAnother")}
-                    </button>
-                  )}
                 </div>
 
-                {/* Total */}
-                <div className="mt-3 flex items-baseline justify-between border-t border-[#EEE] pt-3">
-                  <span className="text-[12px] text-[#888]">
-                    {t("calc.totalPrice")}
-                  </span>
-                  <b className="text-[18px] text-ink-2">
-                    {formatPrice(total, i18n.language)} UZS
-                  </b>
-                </div>
-                {state.items.length > 1 && (
-                  <div className="mt-1 text-right text-[11px] text-[#888]">
-                    {t("calc.currentItem")}: {formatPrice(itemPrice, i18n.language)} UZS
-                  </div>
-                )}
-
-                {step < 4 && (
-                  <button
-                    type="button"
-                    onClick={continueWizard}
-                    className="mt-4 hidden w-full bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-orange-d lg:block"
-                  >
-                    {t("calc.next")}
-                  </button>
-                )}
-                <p className="mt-2 text-center text-[11px] text-[#999]">
+                <p className="mt-2 hidden text-center text-[11px] text-[#999] lg:block">
                   {t("calc.estimateNote")}
                 </p>
               </>
-            )}
-          </div>
+          </div>}
         </div>
       </div>
+      {feedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-[84px] left-1/2 z-[70] flex -translate-x-1/2 animate-[feedback-in_240ms_ease-out] items-center gap-2 whitespace-nowrap rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_35px_-12px_rgba(0,0,0,.45)] motion-reduce:animate-none lg:bottom-8"
+        >
+          <span aria-hidden className="grid size-5 place-items-center rounded-full bg-orange text-white">✓</span>
+          {feedback}
+        </div>
+      )}
     </section>
   );
 }

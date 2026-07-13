@@ -30,7 +30,7 @@ export function Stats() {
             mobile they stack; from lg up they overlap as in the mockup. */}
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.45fr] lg:items-center lg:gap-0">
           {/* About card */}
-          <div className="relative z-10 border-l-[3px] border-orange bg-white p-6 shadow-[0_18px_40px_-22px_rgba(15,15,15,.22)] sm:p-8 lg:-mr-12 lg:max-w-[420px] lg:p-9">
+          <div className="relative z-10 rounded-lg border-l-[3px] border-orange bg-white p-6 shadow-[0_16px_36px_-26px_rgba(15,15,15,.26)] sm:p-8 lg:-mr-12 lg:max-w-[420px] lg:p-9">
             <div className="mb-4 flex items-center gap-3">
               <Logo tone="dark" className="scale-90 origin-left" />
             </div>
@@ -45,7 +45,7 @@ export function Stats() {
                   scrollToAnchor("contacts");
                 }
               }}
-              className="group mt-5 inline-flex items-center gap-2 bg-ink px-5 py-3 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-orange"
+              className="group mt-5 inline-flex items-center gap-2 rounded-md bg-ink px-5 py-3 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-orange"
             >
               {t("about.more")}
               <svg
@@ -63,7 +63,7 @@ export function Stats() {
           {/* Hero photo */}
           <div className="relative">
             <div className="absolute -top-[3px] left-0 z-10 h-[3px] w-24 bg-orange sm:w-32" />
-            <div className="aspect-[16/10] w-full overflow-hidden bg-[linear-gradient(135deg,#c8d8e3_0%,#8fa4b3_60%,#5d7283_100%)]">
+            <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-[linear-gradient(135deg,#c8d8e3_0%,#8fa4b3_60%,#5d7283_100%)] shadow-[0_16px_36px_-28px_rgba(15,15,15,.32)]">
               {!photoFailed && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -106,7 +106,7 @@ export function Stats() {
           {STATS.map((s) => (
             <div
               key={s.key}
-              className="group relative flex items-start justify-between gap-3 border border-[#ECECEC] bg-white p-5 transition-colors hover:border-orange"
+              className="group relative flex items-start justify-between gap-3 rounded-lg border border-[#ECECEC] bg-white p-5 shadow-[0_10px_28px_-26px_rgba(15,15,15,.3)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#D8D8D8] hover:shadow-[0_14px_30px_-24px_rgba(15,15,15,.34)]"
             >
               <div className="min-w-0">
                 <p className="m-0 text-[26px] font-extrabold leading-none tracking-tight text-ink sm:text-[30px]">

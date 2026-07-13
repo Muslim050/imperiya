@@ -9,7 +9,7 @@ function SeriesCard({ item }: { item: Series }) {
   return (
     <Link
       href={`/profile/${item.slug}`}
-      className="group flex flex-col border border-[#1f1f1f] bg-[#171717] transition-colors hover:border-[#3a3a3a]"
+      className="group flex flex-col overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#171717] shadow-[0_12px_28px_-24px_rgba(0,0,0,.75)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#414141] hover:shadow-[0_16px_32px_-24px_rgba(0,0,0,.85)]"
     >
       <div
         className="relative overflow-hidden"
@@ -38,7 +38,7 @@ function SeriesCard({ item }: { item: Series }) {
       <div className="px-1.5 pt-3.5 pb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.08em] text-white">
         {item.name}
       </div>
-      <span className="mx-3.5 mb-3.5 border border-[#2c2c2c] bg-[#1f1f1f] py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-[#ddd] transition-colors group-hover:bg-[#262626] group-hover:text-white">
+      <span className="mx-3.5 mb-3.5 rounded-md border border-[#333] bg-[#1f1f1f] py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-[#ddd] transition-colors group-hover:bg-[#262626] group-hover:text-white">
         {t("profiles.more")}
       </span>
     </Link>

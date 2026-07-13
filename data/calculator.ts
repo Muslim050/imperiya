@@ -372,15 +372,16 @@ const initialSerial = SERIAL_CATALOG.window.pvc![2]; // Engelberg 70
 export function defaultProductConfig(
   overrides: Partial<ProductConfig> = {},
 ): ProductConfig {
-  const ser = overrides.product === "door"
+  const product = overrides.product ?? "window";
+  const ser = product === "door"
     ? SERIAL_CATALOG.door.aluminum![0]
     : initialSerial;
   const frame: Frame =
-    overrides.frame ?? (overrides.product === "door" ? "door-single" : "double");
+    overrides.frame ?? (product === "door" ? "door-single" : "double");
   return {
     id: newItemId(),
-    product: "window",
-    materialType: "pvc",
+    product,
+    materialType: product === "door" ? "aluminum" : "pvc",
     serial: ser.id,
     frame,
     variantId: DEFAULT_VARIANT[frame],

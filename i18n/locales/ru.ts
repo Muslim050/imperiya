@@ -41,10 +41,13 @@ const ru = {
       contacts: "Контакты",
     },
     wizard: {
-      construction: "Конструкция и размер",
-      configuration: "Профиль и комплектация",
+      product: "Тип конструкции",
+      frame: "Количество створок",
+      opening: "Способ открывания",
+      sizes: "Размеры",
+      configuration: "Комплектация",
       estimate: "Предварительная стоимость",
-      contacts: "Контакты и отправка",
+      contacts: "Контакты",
       progress: "Шаг {{current}} из {{total}}",
       pieces: "шт.",
     },
@@ -110,7 +113,12 @@ const ru = {
     getResult: "Получить расчёт",
     sendMessenger: "Отправим расчёт в мессенджер",
     submit: "Отправить заявку",
+    sending: "Отправляем заявку…",
     success: "Спасибо! Мы свяжемся с вами в ближайшее время.",
+    requestNumber: "Номер заявки",
+    successTime: "Менеджер свяжется с вами в течение 24 часов.",
+    newCalculation: "Новый расчёт",
+    draftSaved: "Черновик сохранён в этой вкладке",
     /* Plural forms — Russian needs one/few/many, English & Uzbek need
      * one/other. We declare all four in every locale so the i18n schema
      * (derived from the ru object) stays consistent across locales. */
@@ -127,6 +135,7 @@ const ru = {
       email: "Проверьте формат email",
     },
     addAnother: "Добавить ещё",
+    itemAdded: "Позиция добавлена",
     removeItem: "Удалить позицию",
     cart: "Состав заявки",
     totalPrice: "Итого",

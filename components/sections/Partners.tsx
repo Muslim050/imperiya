@@ -11,7 +11,7 @@ import { PARTNERS, type Partner } from "@/data/catalog";
 function PartnerCard({ partner }: { partner: Partner }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="grid h-[88px] w-[180px] shrink-0 place-items-center border border-[#ECECEC] bg-white px-4">
+    <div className="grid h-[88px] w-[180px] shrink-0 place-items-center rounded-lg border border-[#ECECEC] bg-white px-4 shadow-[0_10px_26px_-24px_rgba(15,15,15,.28)]">
       {failed ? (
         <span className="text-[17px] font-extrabold uppercase tracking-tight text-[#555]">
           {partner.name}
