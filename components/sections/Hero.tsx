@@ -62,8 +62,9 @@ export function Hero() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/hero/engelberg.jpg"
-        alt="Окна Engelberg"
+        alt="Панорамные окна Engelberg от фабрики IMPERIYA"
         loading="eager"
+        fetchPriority="high"
         decoding="async"
         onError={(e) => {
           // tolerate a .png source; if neither exists, fall back to the dark panel
