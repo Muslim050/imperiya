@@ -1,3 +1,5 @@
+import { isHomePath } from "@/lib/locale";
+
 /**
  * Smooth-scrolls to the element with the given id, accounting for the sticky
  * header so the section title isn't hidden underneath. Updates window.location.hash
@@ -21,11 +23,10 @@ export function scrollToAnchor(id: string) {
 }
 
 /**
- * Returns true when we're already on the home page — in which case clicking
- * an "/#foo" link should scroll locally rather than re-navigate via Next.
+ * Returns true when we're already on a language home page ("/ru", "/uz",
+ * "/en") — in which case clicking an "/#foo" link should scroll locally
+ * rather than re-navigate via Next.
  */
 export function isOnHome(): boolean {
-  return (
-    typeof window !== "undefined" && window.location.pathname === "/"
-  );
+  return typeof window !== "undefined" && isHomePath(window.location.pathname);
 }

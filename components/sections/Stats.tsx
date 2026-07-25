@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { STATS } from "@/data/catalog";
 import { STAT_ICON } from "./about/statIcons";
 import { Logo } from "@/components/Logo";
@@ -21,6 +22,7 @@ import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
  */
 export function Stats() {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const [photoFailed, setPhotoFailed] = useState(false);
 
   return (
@@ -38,7 +40,7 @@ export function Stats() {
               {t("about.text")}
             </p>
             <Link
-              href="/#contacts"
+              href={href("/#contacts")}
               onClick={(e) => {
                 if (isOnHome()) {
                   e.preventDefault();

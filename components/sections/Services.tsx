@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import Link from "next/link";
 import { SERVICES, type ServiceKey } from "@/data/catalog";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
@@ -36,6 +37,7 @@ const BG: Record<ServiceKey, string> = {
 
 export function Services() {
   const { t } = useTranslation();
+  const href = useLocalePath();
 
   // Clicking a service tile or the "Все услуги" CTA expresses interest →
   // smooth-scroll to the contacts/footer section so the user can call or open
@@ -58,7 +60,7 @@ export function Services() {
           {SERVICES.map((s) => (
             <Link
               key={s}
-              href="/#contacts"
+              href={href("/#contacts")}
               onClick={onContactsClick}
               className="group relative block overflow-hidden rounded-lg text-white shadow-[0_12px_28px_-24px_rgba(15,15,15,.38)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-24px_rgba(15,15,15,.45)]"
               style={{ aspectRatio: "1 / 0.95" }}
@@ -108,7 +110,7 @@ export function Services() {
         </div>
         <div className="mt-3.5 flex justify-center">
           <Link
-            href="/#contacts"
+            href={href("/#contacts")}
             onClick={onContactsClick}
             className="rounded-md border border-[#DDD] bg-white px-[26px] py-3 text-[12px] font-bold uppercase tracking-[0.1em] shadow-[0_8px_22px_-20px_rgba(15,15,15,.3)] transition-colors hover:border-orange hover:text-orange"
           >

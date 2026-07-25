@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { PROFILE_SERIES, type ProfileSeries as Series } from "@/data/catalog";
 
 function SeriesCard({ item }: { item: Series }) {
   const { t } = useTranslation();
+  const href = useLocalePath();
   return (
     <Link
-      href={`/profile/${item.slug}`}
+      href={href(`/profile/${item.slug}`)}
       className="group flex flex-col overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#171717] shadow-[0_12px_28px_-24px_rgba(0,0,0,.75)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#414141] hover:shadow-[0_16px_32px_-24px_rgba(0,0,0,.85)]"
     >
       <div

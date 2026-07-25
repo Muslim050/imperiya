@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { OpenIndicator } from "@/components/ui/OpenIndicator";
@@ -82,6 +83,7 @@ function ContactRow({
 
 export function Footer() {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const year = new Date().getFullYear();
 
   return (
@@ -104,7 +106,7 @@ export function Footer() {
             </p>
           </div>
           <Link
-            href="/#calculator"
+            href={href("/#calculator")}
             onClick={(e) => {
               if (isOnHome()) {
                 e.preventDefault();

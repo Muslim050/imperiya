@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import Link from "next/link";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
@@ -43,6 +44,7 @@ const FEATURES = [
 
 export function Hero() {
   const { t } = useTranslation();
+  const href = useLocalePath();
 
   // Same-page anchor CTAs scroll explicitly so the sticky-header offset is
   // respected and we don't depend on Next's same-path hash navigation.
@@ -139,14 +141,14 @@ export function Hero() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/#calculator"
+              href={href("/#calculator")}
               onClick={onAnchorClick("calculator")}
               className="inline-flex items-center justify-center rounded-md bg-orange px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(0,0,0,.48)] transition-colors hover:bg-orange-d"
             >
               {t("hero.ctaCalc")}
             </Link>
             <Link
-              href="/#contacts"
+              href={href("/#contacts")}
               onClick={onAnchorClick("contacts")}
               className="inline-flex items-center justify-center rounded-md border border-white/35 px-[22px] py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10"
             >

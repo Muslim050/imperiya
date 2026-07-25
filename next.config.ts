@@ -14,6 +14,22 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  /**
+   * Every language lives under its own prefix, so the un-prefixed URLs the
+   * site used to serve must move permanently. 308 (Next's `permanent: true`)
+   * passes ranking signals on exactly like a 301 and, unlike 302, tells
+   * crawlers to replace the old URL in the index rather than keep it.
+   */
+  async redirects() {
+    return [
+      { source: "/", destination: "/ru", permanent: true },
+      {
+        source: "/profile/:slug",
+        destination: "/ru/profile/:slug",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

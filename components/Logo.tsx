@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { cn } from "@/lib/utils";
 import { WindowMark } from "@/components/ui/icons";
 
@@ -20,11 +21,12 @@ export function Logo({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const light = tone === "light";
 
   return (
     <Link
-      href="/"
+      href={href("/")}
       aria-label="IMPERIYA"
       className={cn("flex items-center gap-3", className)}
     >

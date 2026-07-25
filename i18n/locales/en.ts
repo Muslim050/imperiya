@@ -240,6 +240,43 @@ const en: Translation = {
     title: "Page not found",
     home: "Go home",
   },
+  specs: {
+    labels: {
+      profileType: "Profile type",
+      series: "Series",
+      wallThickness: "Wall thickness",
+      chambers: "Chambers",
+      maxSashHeight: "Max. sash height",
+      maxSashWidth: "Max. sash width",
+      glassThickness: "Glass unit thickness",
+      coating: "Finish",
+      mountingDepth: "Installation depth",
+      glazingOptions: "Glazing options",
+      maxFillWeight: "Max. infill weight",
+    },
+    values: {
+      aluminium: "Aluminium",
+      aluminiumAdj: "Aluminium",
+      pvc: "PVC",
+      warm: "warm",
+      cold: "cold",
+      lamination: "Lamination",
+      anodisingRalLamination: "Anodising, RAL colours, lamination",
+      decorCapsClampProfile: "decorative caps / clamping profile",
+    },
+    units: { mm: "mm", kg: "kg" },
+  },
+  seo: {
+    title: "IMPERIYA — Windows, Doors and Facade Glazing Factory",
+    description:
+      "IMPERIYA is a premium windows, doors and facade glazing factory. Official Akfa partner. Thermo and Engelberg profiles, energy-efficient glass units, turnkey installation. Calculate your price online.",
+    profileTitle: "{{name}} profile",
+    profileDescription:
+      "{{name}} — {{category}}{{depth}}. Specifications, glazing and turnkey installation. Calculate your price online at IMPERIYA.",
+    profileDepth: ", installation depth {{value}}",
+    categoryFacade: "facade systems",
+    categoryPvc: "PVC profile",
+  },
 };
 
 export default en;

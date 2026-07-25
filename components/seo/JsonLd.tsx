@@ -1,9 +1,6 @@
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_DESCRIPTION,
-  BUSINESS,
-} from "@/lib/site";
+import { SITE_URL, SITE_NAME, BUSINESS, siteDescription } from "@/lib/site";
+import { localePath } from "@/lib/locale";
+import type { LangCode } from "@/i18n/config";
 import { SOCIALS } from "@/data/catalog";
 
 /**
@@ -12,19 +9,21 @@ import { SOCIALS } from "@/data/catalog";
  * opening hours) in Google Search and Maps. Rendered server-side so
  * crawlers see it in the initial HTML.
  */
-export function JsonLd() {
+export function JsonLd({ lang }: { lang: LangCode }) {
   const sameAs = SOCIALS.map((s) => s.href).filter((h) => h && h !== "#");
 
   const data = {
     "@context": "https://schema.org",
     "@type": ["Organization", "LocalBusiness"],
+    // One business, one @id across all three languages — the graph must
+    // not describe three separate companies.
     "@id": `${SITE_URL}/#business`,
     name: SITE_NAME,
     legalName: BUSINESS.legalName,
-    url: SITE_URL,
+    url: `${SITE_URL}${localePath(lang, "/")}`,
     logo: `${SITE_URL}/icon.svg`,
     image: `${SITE_URL}/opengraph-image`,
-    description: SITE_DESCRIPTION,
+    description: siteDescription(lang),
     telephone: BUSINESS.phone,
     priceRange: "$$",
     address: {
