@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileContactBar } from "@/components/layout/MobileContactBar";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { YandexMetrica } from "@/components/analytics/YandexMetrica";
 import { LANG_CODES, OG_LOCALES, isLangCode, type LangCode } from "@/i18n/config";
 import { localePath } from "@/lib/locale";
 import {
@@ -146,6 +147,7 @@ export default async function LangLayout({
             <Footer />
             <MobileContactBar />
           </div>
+          <YandexMetrica />
         </I18nProvider>
       </body>
     </html>
