@@ -1,16 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalePath } from "@/lib/useLocalePath";
 import Link from "next/link";
+import Image from "next/image";
 import { SERVICES, type ServiceKey } from "@/data/catalog";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 /**
  * Maps each service to a photo under `public/services/{key}.jpg`.
  * Drop real client photos there with those exact filenames and they show up.
- * If the file is missing the <img> falls back to a deterministic Picsum
- * placeholder so the tile never looks broken.
+ * Missing files fall back to a deterministic Picsum placeholder (see
+ * ServicePhoto) so the tile never looks broken.
  */
 const SERVICE_IMG: Record<ServiceKey, string> = {
   facade: "/services/facade.jpg",
@@ -34,6 +36,37 @@ const BG: Record<ServiceKey, string> = {
   gates: "linear-gradient(180deg,#3b3b3b 0%,#0d0d0d 100%)",
   wpc: "linear-gradient(180deg,#5a4233 0%,#17100a 100%)",
 };
+
+/**
+ * Service tile photo. Three client photos (pergola, gates, wpc) haven't
+ * arrived yet; until they do the tile falls back to a Picsum placeholder,
+ * and if that fails too the branded gradient behind it shows through.
+ */
+function ServicePhoto({ service, alt }: { service: ServiceKey; alt: string }) {
+  const [src, setSrc] = useState(SERVICE_IMG[service]);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      /* 2→3→4 columns inside a 1280px container keeps the tile at
+         roughly 290–310px throughout. */
+      sizes="310px"
+      onError={() => {
+        if (src === SERVICE_IMG[service]) {
+          setSrc(`https://picsum.photos/seed/imperiya-${service}/800/760`);
+        } else {
+          setFailed(true);
+        }
+      }}
+      className="object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  );
+}
 
 export function Services() {
   const { t } = useTranslation();
@@ -69,19 +102,9 @@ export function Services() {
               <div className="absolute inset-0" style={{ background: BG[s] }} />
 
               {/* real photo (or placeholder until client photos arrive) */}
-              <img
-                src={SERVICE_IMG[s]}
+              <ServicePhoto
+                service={s}
                 alt={t(`services.items.${s}`)}
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = "1";
-                    img.src = `https://picsum.photos/seed/imperiya-${s}/800/760`;
-                  }
-                }}
-                className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* readability gradient — keeps the label legible on any photo */}

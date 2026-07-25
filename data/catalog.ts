@@ -294,14 +294,18 @@ export const PARTNERS: Partner[] = [
 export interface Certificate {
   id: string;
   img: string;
+  /** Intrinsic pixel size — next/image needs it for the lightbox, which
+   *  sizes by height and so has no box to fill. */
+  w: number;
+  h: number;
   titleKey: string;
 }
 
 export const CERTIFICATES: Certificate[] = [
-  { id: "iso", img: "/certificates/national-1.jpg", titleKey: "iso" },
-  { id: "gost-32603", img: "/certificates/national-2.jpg", titleKey: "gost32603" },
-  { id: "gost-30245", img: "/certificates/national-3.jpg", titleKey: "gost30245" },
-  { id: "gost-23486", img: "/certificates/inter-1.jpg", titleKey: "gost23486" },
+  { id: "iso", img: "/certificates/national-1.jpg", w: 777, h: 1100, titleKey: "iso" },
+  { id: "gost-32603", img: "/certificates/national-2.jpg", w: 778, h: 1100, titleKey: "gost32603" },
+  { id: "gost-30245", img: "/certificates/national-3.jpg", w: 778, h: 1100, titleKey: "gost30245" },
+  { id: "gost-23486", img: "/certificates/inter-1.jpg", w: 777, h: 1100, titleKey: "gost23486" },
 ];
 
 /** New "Imperiya in numbers" block per the TZ. */

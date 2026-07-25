@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalePath } from "@/lib/useLocalePath";
 import Link from "next/link";
+import Image from "next/image";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 
 /* USP icons straight from the design markup */
@@ -45,6 +47,8 @@ const FEATURES = [
 export function Hero() {
   const { t } = useTranslation();
   const href = useLocalePath();
+  // If the banner is missing the dark panel behind it stands on its own.
+  const [heroFailed, setHeroFailed] = useState(false);
 
   // Same-page anchor CTAs scroll explicitly so the sticky-header offset is
   // respected and we don't depend on Next's same-path hash navigation.
@@ -61,25 +65,24 @@ export function Hero() {
       {/* Engelberg banner on the right ~65%. On desktop it's shown in full
           (object-contain) so it's never cropped; the black letterbox blends into
           the night background. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/hero/engelberg.jpg"
-        alt="Панорамные окна Engelberg от фабрики IMPERIYA"
-        loading="eager"
-        fetchPriority="high"
-        decoding="async"
-        onError={(e) => {
-          // tolerate a .png source; if neither exists, fall back to the dark panel
-          const img = e.currentTarget;
-          if (!img.dataset.fallback) {
-            img.dataset.fallback = "1";
-            img.src = "/hero/engelberg.png";
-          } else {
-            img.style.display = "none";
-          }
-        }}
-        className="absolute inset-y-0 right-0 z-0 h-full w-full object-cover object-center lg:w-[70%] lg:object-contain lg:object-right"
-      />
+      {/* The wrapper carries the geometry (full-bleed on mobile, right 70%
+          on desktop) because `fill` pins the image to its parent's box.
+          LCP element: `priority` emits the preload and skips lazy loading;
+          `sizes` mirrors the wrapper so Next doesn't ship a full-viewport
+          srcset on desktop. */}
+      {!heroFailed && (
+        <div className="absolute inset-y-0 right-0 z-0 w-full lg:w-[70%]">
+          <Image
+            src="/hero/engelberg.jpg"
+            alt="Панорамные окна Engelberg от фабрики IMPERIYA"
+            fill
+            priority
+            sizes="(min-width: 1024px) 70vw, 100vw"
+            onError={() => setHeroFailed(true)}
+            className="object-cover object-center lg:object-contain lg:object-right"
+          />
+        </div>
+      )}
 
       {/* Darkened background behind the text (left zone) so it reads on its own
           panel, then fades to fully clear before the window so the photo's right
@@ -112,12 +115,13 @@ export function Hero() {
           </p>
 
           <div className="mb-[26px] flex items-center gap-[22px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/brands/engelberg.png"
               alt="Engelberg"
-              loading="lazy"
-              decoding="async"
+              width={500}
+              height={112}
+              /* Fixed 48px tall → ~214px wide; see the note in Logo.tsx. */
+              sizes="214px"
               className="h-12 w-auto object-contain"
             />
             {/* THERMO — wordmark only, no icon per the TZ */}

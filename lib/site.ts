@@ -122,5 +122,8 @@ export const BUSINESS = {
     region: "Ташкентская область",
     country: "UZ",
   },
+  /* Where the factory actually sells and installs. Feeds `areaServed`,
+   * which is what ties the business to local-intent queries. */
+  areaServed: ["Ташкент", "Ташкентская область", "Узбекистан"],
   hours: { opens: "09:00", closes: "20:00" },
 } as const;

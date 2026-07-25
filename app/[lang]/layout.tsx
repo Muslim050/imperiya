@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import ReactDOM from "react-dom";
 import { Manrope } from "next/font/google";
 import "../globals.css";
 import { I18nProvider } from "@/components/I18nProvider";
@@ -129,14 +128,9 @@ export default async function LangLayout({
   const { lang } = await params;
   if (!isLangCode(lang)) notFound();
 
-  // The hero banner is the LCP element. Kick off its fetch from the head,
-  // at high priority, before the parser reaches the markup. Done via the
-  // preload API rather than a literal <link> so React emits it exactly
-  // once — a <link> placed inside <head> gets hoisted and duplicated.
-  ReactDOM.preload("/hero/engelberg.jpg", {
-    as: "image",
-    fetchPriority: "high",
-  });
+  // The hero banner's preload now comes from <Image priority> in Hero.tsx,
+  // which points at the optimised /_next/image URL the browser will
+  // actually request — preloading the raw file here would fetch it twice.
 
   return (
     <html lang={lang} className={manrope.variable}>

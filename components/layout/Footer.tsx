@@ -98,9 +98,9 @@ export function Footer() {
       >
         <div className="inner flex flex-col items-start justify-between gap-6 py-10 md:flex-row md:items-center">
           <div>
-            <h3 className="m-0 max-w-[640px] text-[22px] font-extrabold uppercase leading-[1.15] tracking-[0.01em] text-white sm:text-[26px]">
+            <h2 className="m-0 max-w-[640px] text-[22px] font-extrabold uppercase leading-[1.15] tracking-[0.01em] text-white sm:text-[26px]">
               {t("footer.ctaTitle")}
-            </h3>
+            </h2>
             <p className="mt-2 max-w-[520px] text-[13px] text-white/55">
               {t("footer.ctaSub")}
             </p>
@@ -152,10 +152,10 @@ export function Footer() {
 
             {/* Contacts */}
             <div>
-              <h4 className="relative m-0 mb-6 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white">
+              <h3 className="relative m-0 mb-6 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white">
                 {t("footer.contacts")}
                 <span className="absolute -bottom-2 left-0 h-[2px] w-8 bg-orange" />
-              </h4>
+              </h3>
               <div className="space-y-4">
                 <ContactRow icon={<PhoneIcon />}>
                   <a
@@ -185,10 +185,10 @@ export function Footer() {
 
             {/* Socials */}
             <div>
-              <h4 className="relative m-0 mb-6 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white">
+              <h3 className="relative m-0 mb-6 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white">
                 {t("footer.social")}
                 <span className="absolute -bottom-2 left-0 h-[2px] w-8 bg-orange" />
-              </h4>
+              </h3>
               <div className="flex gap-3">
                 {SOCIALS.map((s) => (
                   <a

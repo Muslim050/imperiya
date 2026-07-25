@@ -13,6 +13,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
+    /* Every source in public/ is already cut to the size it is painted at,
+     * so the huge default ladder would just multiply Vercel image
+     * transformations without producing a sharper pixel. */
+    deviceSizes: [640, 828, 1080, 1920],
+    imageSizes: [64, 128, 256, 384, 512],
+    remotePatterns: [
+      /* Placeholder shown by Services.tsx while three client photos
+       * (pergola, gates, wpc) are still missing. */
+      { protocol: "https", hostname: "picsum.photos" },
+    ],
   },
   /**
    * Every language lives under its own prefix, so the un-prefixed URLs the

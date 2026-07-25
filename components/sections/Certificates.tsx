@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATES, type Certificate } from "@/data/catalog";
@@ -47,14 +48,13 @@ export function Certificates() {
               onClick={() => setLightbox(c)}
               className="group flex flex-col items-stretch gap-2 rounded-lg border border-[#E6E6E6] bg-white p-3 text-left shadow-[0_10px_28px_-26px_rgba(15,15,15,.3)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#D8D8D8] hover:shadow-[0_14px_30px_-24px_rgba(15,15,15,.34)]"
             >
-              <div className="overflow-hidden rounded-md bg-[#f7f5ef]" style={{ aspectRatio: "0.78 / 1" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="relative overflow-hidden rounded-md bg-[#f7f5ef]" style={{ aspectRatio: "0.78 / 1" }}>
+                <Image
                   src={c.img}
                   alt={t(`certificates.items.${c.titleKey}`)}
-                  loading="lazy"
-                  decoding="async"
-                  className="block size-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  fill
+                  sizes="220px"
+                  className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                 />
               </div>
               <span className="line-clamp-2 text-[11px] font-semibold leading-tight text-[#444] group-hover:text-orange">
@@ -98,11 +98,13 @@ export function Certificates() {
                 <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={lightbox.img}
               alt={t(`certificates.items.${lightbox.titleKey}`)}
-              className="block max-h-[85vh] w-auto rounded-md bg-white object-contain"
+              width={lightbox.w}
+              height={lightbox.h}
+              sizes="(min-width: 900px) 900px, 100vw"
+              className="block h-auto max-h-[85vh] w-auto rounded-md bg-white object-contain"
             />
             <p className="mt-2 text-center text-[12px] font-semibold text-white">
               {t(`certificates.items.${lightbox.titleKey}`)}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { GLASS_UNITS, type GlassUnitKey } from "@/data/catalog";
 
@@ -231,18 +232,21 @@ function GlassDiag({ k }: { k: GlassUnitKey }) {
  * consistent visual instead of six different-aspect photos.
  */
 function GlassThumb({ k }: { k: GlassUnitKey }) {
+  const { t } = useTranslation();
   const photo = GLASS_PHOTOS[k];
 
   return (
     <div className="grid h-[160px] w-[130px] shrink-0 place-items-center">
       {photo ? (
-        <img
-          src={photo}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          className="block h-full w-auto max-w-full object-contain"
-        />
+        <div className="relative size-full">
+          <Image
+            src={photo}
+            alt={t(`glass.names.${k}`)}
+            fill
+            sizes="130px"
+            className="object-contain"
+          />
+        </div>
       ) : (
         <GlassDiag k={k} />
       )}

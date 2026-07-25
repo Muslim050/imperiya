@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useLocalePath } from "@/lib/useLocalePath";
 import { PROFILE_SERIES, type ProfileSeries as Series } from "@/data/catalog";
@@ -21,13 +22,15 @@ function SeriesCard({ item }: { item: Series }) {
         }}
       >
         {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={item.image}
             alt={item.name}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 size-full object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
+            fill
+            /* The column count rises with the viewport (2→3→4→6→7 inside a
+               1280px container), so the card itself stays 150–185px wide at
+               every breakpoint — a flat cap beats a vw guess here. */
+            sizes="185px"
+            className="object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
           /* Series without an artwork file yet — show the wordmark on the

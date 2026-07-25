@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn, formatPrice } from "@/lib/utils";
@@ -105,7 +106,8 @@ function Section({
 }) {
   return (
     <div className="border-t border-[#ECECEC] pt-5 first:border-t-0 first:pt-0">
-      <h4 className={SECTION_TITLE}>{title}</h4>
+      {/* H3, not H4: these sit directly under the calculator's H2. */}
+      <h3 className={SECTION_TITLE}>{title}</h3>
       {children}
     </div>
   );
@@ -704,14 +706,13 @@ export function Calculator() {
                                 : "border-[#EFEFEF] hover:border-[#cfcfcf]",
                             )}
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            {/* Decorative: the variant name is right below. */}
+                            <Image
                               src={v.scheme}
                               alt=""
                               width={46}
                               height={60}
-                              loading="lazy"
-                              decoding="async"
+                              sizes="46px"
                               className="block h-[60px] w-auto object-contain"
                             />
                             <span className="line-clamp-2 text-[12px] font-semibold leading-tight text-[#444]">

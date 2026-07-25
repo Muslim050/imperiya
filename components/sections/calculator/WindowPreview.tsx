@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 /**
  * Big preview shown in the right-hand panel. Renders the selected variant's
  * photorealistic artwork from public/calculator/ with the chosen dimensions
@@ -30,18 +32,21 @@ export function WindowPreview({
         {height || 0} мм
       </div>
       <div className="grid h-[170px] min-h-0 place-items-center overflow-hidden rounded-md bg-[linear-gradient(180deg,#eef3f6,#dde6ec)] p-3 sm:h-auto sm:aspect-[4/3]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        {/* Intrinsic size is unknown (artwork varies), so the declared
+            dimensions only set the ratio next/image needs; the CSS below
+            still does the real sizing and object-contain never distorts. */}
+        <Image
           key={imageSrc}
           src={imageSrc}
           alt={alt}
+          width={800}
+          height={800}
+          sizes="420px"
           className={
             narrow
               ? "block h-auto max-h-[78%] w-auto max-w-[58%] animate-[preview-in_320ms_ease-out] object-contain motion-reduce:animate-none"
               : "block size-full animate-[preview-in_320ms_ease-out] object-contain motion-reduce:animate-none"
           }
-          loading="lazy"
-          decoding="async"
         />
       </div>
     </div>

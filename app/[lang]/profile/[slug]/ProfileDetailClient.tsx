@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useLocalePath } from "@/lib/useLocalePath";
 import { useLang } from "@/components/I18nProvider";
@@ -58,13 +59,13 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
             }}
           >
             {profile.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={profile.image}
-                alt={profile.name}
-                loading="eager"
-                decoding="async"
-                className="size-full object-contain p-8"
+                alt={`${t("profiles.title")} ${profile.name}`}
+                fill
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-contain p-8"
               />
             ) : (
               <WindowMark className="size-24 text-white/15" />
