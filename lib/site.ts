@@ -125,5 +125,8 @@ export const BUSINESS = {
   /* Where the factory actually sells and installs. Feeds `areaServed`,
    * which is what ties the business to local-intent queries. */
   areaServed: ["Ташкент", "Ташкентская область", "Узбекистан"],
+  /* Client-supplied, read off the map. Wrong coordinates would pin the
+   * company to the wrong place in Maps, so these are never guessed. */
+  geo: { latitude: 41.200192, longitude: 69.110198 },
   hours: { opens: "09:00", closes: "20:00" },
 } as const;

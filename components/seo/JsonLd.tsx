@@ -43,6 +43,15 @@ export function JsonLd({ lang }: { lang: LangCode }) {
       addressRegion: BUSINESS.address.region,
       addressCountry: BUSINESS.address.country,
     },
+    /* Exact point of the factory. Together with the address this is what
+     * lets Maps and local search place the business rather than guess it
+     * from the street line. */
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: BUSINESS.geo.latitude,
+      longitude: BUSINESS.geo.longitude,
+    },
+    hasMap: `https://yandex.uz/maps/?ll=${BUSINESS.geo.longitude},${BUSINESS.geo.latitude}&z=17&pt=${BUSINESS.geo.longitude},${BUSINESS.geo.latitude}`,
     areaServed: BUSINESS.areaServed.map((name) => ({
       "@type": "AdministrativeArea",
       name,
