@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import ReactDOM from "react-dom";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/components/I18nProvider";
 import { ScrollManager } from "@/components/ScrollManager";
@@ -13,6 +15,22 @@ import {
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
 } from "@/lib/site";
+
+/**
+ * Self-hosted by next/font at build time: no request to fonts.googleapis.com,
+ * so nothing blocks first render and there's no third-party connection to
+ * negotiate. `cyrillic` is required — the whole site is Russian. `display:
+ * swap` + the auto-generated size-adjusted fallback keep CLS at zero while
+ * the face loads.
+ */
+const manrope = Manrope({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-manrope",
+  // The system-font tail lives in --font-sans (globals.css); next/font adds
+  // its own metric-matched "Manrope Fallback" ahead of it automatically.
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -58,6 +76,20 @@ export const metadata: Metadata = {
     telephone: true,
     address: true,
   },
+  /**
+   * Ownership proof for the webmaster consoles. Yandex matters as much as
+   * Google here — it holds a large share of search in Uzbekistan. Both are
+   * env-driven so the codebase carries no account-specific tokens; the tag
+   * is simply omitted until the value is set on the deploy target.
+   */
+  verification: {
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+      : {}),
+    ...(process.env.NEXT_PUBLIC_YANDEX_VERIFICATION
+      ? { yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION }
+      : {}),
+  },
 };
 
 export const viewport: Viewport = {
@@ -71,20 +103,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The hero banner is the LCP element. Kick off its fetch from the head,
+  // at high priority, before the parser reaches the markup. Done via the
+  // preload API rather than a literal <link> so React emits it exactly
+  // once — a <link> placed inside <head> gets hoisted and duplicated.
+  ReactDOM.preload("/hero/engelberg.jpg", {
+    as: "image",
+    fetchPriority: "high",
+  });
+
   return (
-    <html lang="ru">
+    <html lang="ru" className={manrope.variable}>
       <head>
         <JsonLd />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         <I18nProvider>

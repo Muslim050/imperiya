@@ -14,7 +14,7 @@ import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
 const SERVICE_IMG: Record<ServiceKey, string> = {
   facade: "/services/facade.jpg",
   shutters: "/services/shutters.jpg",
-  adjustment: "/services/adjustment.png",
+  adjustment: "/services/adjustment.jpg",
   shower: "/services/shower.jpg",
   sliding: "/services/sliding.jpeg",
   pergola: "/services/pergola.jpg",
