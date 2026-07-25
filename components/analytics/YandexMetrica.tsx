@@ -11,6 +11,14 @@ import { useEffect, useRef } from "react";
  *
  * The counter id is env-driven: nothing renders until it is set, so local
  * dev and preview deploys don't pollute the production stats.
+ *
+ * `ssr: true` with an explicit referrer/url is Yandex's own recommendation
+ * for server-rendered apps: the counter boots after hydration, by which
+ * point those values can no longer be inferred reliably.
+ *
+ * Note there is deliberately no `defer` — it suppresses the pageview that
+ * `init` sends, and the effect below only fires on navigation, so the
+ * landing view would go uncounted.
  */
 const COUNTER_ID = process.env.NEXT_PUBLIC_YANDEX_METRICA_ID;
 
@@ -59,11 +67,13 @@ export function YandexMetrica() {
           (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
 
           ym(${Number(COUNTER_ID)}, "init", {
+            ssr: true,
+            referrer: document.referrer,
+            url: location.href,
             clickmap: true,
             trackLinks: true,
             accurateTrackBounce: true,
-            webvisor: ${WEBVISOR},
-            defer: true
+            webvisor: ${WEBVISOR}
           });
         `}
       </Script>

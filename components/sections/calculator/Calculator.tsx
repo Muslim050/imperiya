@@ -969,6 +969,8 @@ export function Calculator() {
                           }))}
                           className={cn(
                             "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
+                            // Webvisor writes these as asterisks instead of the real value.
+                            "ym-disable-keys",
                             validationErrors.name ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.name)}
@@ -998,6 +1000,8 @@ export function Calculator() {
                           }))}
                           className={cn(
                             "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
+                            // Webvisor writes these as asterisks instead of the real value.
+                            "ym-disable-keys",
                             validationErrors.phone ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.phone)}
@@ -1023,6 +1027,8 @@ export function Calculator() {
                           }))}
                           className={cn(
                             "h-[44px] w-full rounded-md border bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-orange",
+                            // Webvisor writes these as asterisks instead of the real value.
+                            "ym-disable-keys",
                             validationErrors.email ? "border-orange" : "border-[#DDD]",
                           )}
                           aria-invalid={Boolean(validationErrors.email)}
