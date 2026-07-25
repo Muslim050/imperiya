@@ -226,7 +226,6 @@ const en: Translation = {
     contacts: "Contacts",
     address: "Tashkent region, Yangiyul district, Takhtakuprik str., 18 A",
     showMap: "Show on map",
-    social: "Find us on social media",
     rights: "All rights reserved.",
     emailSoon: "Email will be added later",
     ctaTitle: "Ready to calculate the cost of your window?",

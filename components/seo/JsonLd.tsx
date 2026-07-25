@@ -1,7 +1,7 @@
 import { SITE_URL, SITE_NAME, BUSINESS, siteDescription } from "@/lib/site";
 import { localePath } from "@/lib/locale";
 import type { LangCode } from "@/i18n/config";
-import { SOCIALS, SERVICES } from "@/data/catalog";
+import { SERVICES } from "@/data/catalog";
 import ru from "@/i18n/locales/ru";
 import uz from "@/i18n/locales/uz";
 import en from "@/i18n/locales/en";
@@ -18,7 +18,6 @@ const LOCALES = { ru, uz, en } as const;
  * described from several angles instead of unrelated fragments.
  */
 export function JsonLd({ lang }: { lang: LangCode }) {
-  const sameAs = SOCIALS.map((s) => s.href).filter((h) => h && h !== "#");
   const home = `${SITE_URL}${localePath(lang, "/")}`;
   const t = LOCALES[lang];
 
@@ -72,7 +71,8 @@ export function JsonLd({ lang }: { lang: LangCode }) {
       opens: BUSINESS.hours.opens,
       closes: BUSINESS.hours.closes,
     },
-    ...(sameAs.length > 0 ? { sameAs } : {}),
+    /* No `sameAs`: the client dropped social profiles from the site, and
+     * the property is only meaningful with real, reachable URLs. */
   };
 
   const website = {

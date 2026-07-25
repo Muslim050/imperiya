@@ -226,7 +226,6 @@ const uz: Translation = {
     contacts: "Kontaktlar",
     address: "Toshkent viloyati, Yangiyo‘l tumani, Taxtako‘prik ko‘chasi, 18 A",
     showMap: "Xaritada ko‘rsatish",
-    social: "Ijtimoiy tarmoqlarda",
     rights: "Barcha huquqlar himoyalangan.",
     emailSoon: "Pochta keyinroq qo‘shiladi",
     ctaTitle: "Oynangiz narxini hisoblashga tayyormisiz?",

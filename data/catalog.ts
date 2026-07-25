@@ -324,8 +324,6 @@ export const CONTACTS = {
   mapQuery: "Янгиюльский район, улица Тахтакуприк, 18А",
 };
 
-export const SOCIALS = [
-  { key: "telegram", href: CONTACTS.telegramHref },
-  { key: "instagram", href: "#" },
-  { key: "youtube", href: "#" },
-] as const;
+/* Social profiles were removed from the site — Instagram and YouTube never
+ * had real accounts. `CONTACTS.telegramHref` stays: it is a live contact
+ * channel, still used by the mobile contact bar. */
