@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { Phone } from "@/components/ui/icons";
 import { CONTACTS } from "@/data/catalog";
 import { isOnHome, scrollToAnchor } from "@/lib/scrollToAnchor";
@@ -25,6 +26,7 @@ function CalculatorIcon() {
 
 export function MobileContactBar() {
   const { t } = useTranslation();
+  const href = useLocalePath();
 
   return (
     <nav
@@ -49,7 +51,7 @@ export function MobileContactBar() {
           {t("mobileBar.telegram")}
         </a>
         <Link
-          href="/#calculator"
+          href={href("/#calculator")}
           onClick={(event) => {
             if (isOnHome()) {
               event.preventDefault();

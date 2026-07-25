@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PARTNERS, type Partner } from "@/data/catalog";
@@ -17,15 +18,18 @@ function PartnerCard({ partner }: { partner: Partner }) {
           {partner.name}
         </span>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={partner.logo}
-          alt={partner.name}
-          loading="lazy"
-          decoding="async"
-          onError={() => setFailed(true)}
-          className="max-h-[56px] max-w-[150px] object-contain"
-        />
+        // `fill` needs a sized box; this one matches the old max-* bounds
+        // so the logo keeps its previous footprint inside the card.
+        <div className="relative h-[56px] w-[150px]">
+          <Image
+            src={partner.logo}
+            alt={partner.name}
+            fill
+            sizes="150px"
+            onError={() => setFailed(true)}
+            className="object-contain"
+          />
+        </div>
       )}
     </div>
   );

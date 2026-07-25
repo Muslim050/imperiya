@@ -1,17 +1,28 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { LANGUAGES } from "@/i18n";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LANGUAGES } from "@/i18n/config";
+import { useLang } from "@/components/I18nProvider";
+import { localePath, stripLocale } from "@/lib/locale";
 import { ChevronDown } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 export function LanguageSwitcher({ tone = "dark" }: { tone?: "light" | "dark" }) {
-  const { i18n } = useTranslation();
+  const lang = useLang();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const current =
-    LANGUAGES.find((l) => l.code === i18n.resolvedLanguage) ?? LANGUAGES[0];
+  const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
+
+  /**
+   * Switching language is a navigation, not a client-side state change:
+   * each language has its own URL, so the same page in another language
+   * must be a real <a href>. That also lets crawlers follow the links and
+   * keeps the address bar honest about what is being displayed.
+   */
+  const basePath = stripLocale(pathname);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -52,14 +63,12 @@ export function LanguageSwitcher({ tone = "dark" }: { tone?: "light" | "dark" })
         >
           {LANGUAGES.map((l) => (
             <li key={l.code}>
-              <button
-                type="button"
+              <Link
+                href={localePath(l.code, basePath)}
+                hrefLang={l.code}
                 role="option"
                 aria-selected={l.code === current.code}
-                onClick={() => {
-                  void i18n.changeLanguage(l.code);
-                  setOpen(false);
-                }}
+                onClick={() => setOpen(false)}
                 className={cn(
                   "block w-full px-3 py-2 text-left text-[13px] font-semibold transition-colors",
                   l.code === current.code
@@ -68,7 +77,7 @@ export function LanguageSwitcher({ tone = "dark" }: { tone?: "light" | "dark" })
                 )}
               >
                 {l.label}
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { STATS } from "@/data/catalog";
 import { STAT_ICON } from "./about/statIcons";
 import { Logo } from "@/components/Logo";
@@ -21,11 +23,17 @@ import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
  */
 export function Stats() {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const [photoFailed, setPhotoFailed] = useState(false);
 
   return (
     <section id="about" className="scroll-mt-40 bg-bg py-12 sm:py-16">
       <div className="inner">
+        {/* The design leads this section with the logo card rather than a
+            title, so the heading is visually hidden — without it the
+            section is the only one with no H2, and the "in numbers" H3
+            below would dangle under the previous section's heading. */}
+        <h2 className="sr-only">{t("about.title")}</h2>
         {/* HERO: floating about-card overlapping the factory photo. On
             mobile they stack; from lg up they overlap as in the mockup. */}
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.45fr] lg:items-center lg:gap-0">
@@ -38,7 +46,7 @@ export function Stats() {
               {t("about.text")}
             </p>
             <Link
-              href="/#contacts"
+              href={href("/#contacts")}
               onClick={(e) => {
                 if (isOnHome()) {
                   e.preventDefault();
@@ -63,16 +71,15 @@ export function Stats() {
           {/* Hero photo */}
           <div className="relative">
             <div className="absolute -top-[3px] left-0 z-10 h-[3px] w-24 bg-orange sm:w-32" />
-            <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-[linear-gradient(135deg,#c8d8e3_0%,#8fa4b3_60%,#5d7283_100%)] shadow-[0_16px_36px_-28px_rgba(15,15,15,.32)]">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-[linear-gradient(135deg,#c8d8e3_0%,#8fa4b3_60%,#5d7283_100%)] shadow-[0_16px_36px_-28px_rgba(15,15,15,.32)]">
               {!photoFailed && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src="/about/factory.jpg"
                   alt={t("about.title")}
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
                   onError={() => setPhotoFailed(true)}
-                  className="size-full object-cover"
+                  className="object-cover"
                 />
               )}
               {photoFailed && (

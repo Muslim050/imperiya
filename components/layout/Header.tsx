@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { OpenIndicator } from "@/components/ui/OpenIndicator";
@@ -11,6 +12,7 @@ import { Phone, ChevronRight } from "@/components/ui/icons";
 import { CONTACTS } from "@/data/catalog";
 import { cn } from "@/lib/utils";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
+import { isHomePath, stripLocale } from "@/lib/locale";
 
 const NAV = [
   { key: "home", to: "/", section: null },
@@ -23,6 +25,7 @@ const NAV = [
 
 export function Header() {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -38,7 +41,7 @@ export function Header() {
 
   // Scroll-spy: highlight the nav item whose section is currently in view.
   useEffect(() => {
-    if (pathname !== "/") {
+    if (!isHomePath(pathname)) {
       setActiveSection(null);
       return;
     }
@@ -69,7 +72,9 @@ export function Header() {
   }, [pathname]);
 
   const isActive = (item: (typeof NAV)[number]) => {
-    if (pathname !== "/") return item.to === pathname;
+    // Off the home page, compare against the language-stripped path so
+    // /uz/profile/x still matches a "/profile/x" nav entry.
+    if (!isHomePath(pathname)) return item.to === stripLocale(pathname);
     if (item.section === null) return activeSection === null;
     return activeSection === item.section;
   };
@@ -109,7 +114,7 @@ export function Header() {
           </a>
 
           <Link
-            href="/#calculator"
+            href={href("/#calculator")}
             onClick={(e) => {
               if (isOnHome()) {
                 e.preventDefault();
@@ -152,7 +157,7 @@ export function Header() {
             return (
               <Link
                 key={item.key}
-                href={item.to}
+                href={href(item.to)}
                 onClick={(e) => {
                   if (item.section && isOnHome()) {
                     e.preventDefault();
@@ -192,7 +197,7 @@ export function Header() {
           {NAV.map((item) => (
             <Link
               key={item.key}
-              href={item.to}
+              href={href(item.to)}
               onClick={(e) => {
                 setMobileOpen(false);
                 if (item.section && isOnHome()) {
@@ -208,7 +213,7 @@ export function Header() {
           <div className="mt-3 flex items-center justify-between border-t border-line-2 pt-4">
             <LanguageSwitcher tone="dark" />
             <Link
-              href="/#calculator"
+              href={href("/#calculator")}
               onClick={(e) => {
                 setMobileOpen(false);
                 if (isOnHome()) {

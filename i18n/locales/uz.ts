@@ -240,6 +240,43 @@ const uz: Translation = {
     title: "Sahifa topilmadi",
     home: "Bosh sahifaga",
   },
+  specs: {
+    labels: {
+      profileType: "Profil turi",
+      series: "Seriya",
+      wallThickness: "Devor qalinligi",
+      chambers: "Kameralar soni",
+      maxSashHeight: "Maks. tabaqa balandligi",
+      maxSashWidth: "Maks. tabaqa kengligi",
+      glassThickness: "Shisha paket qalinligi",
+      coating: "Qoplama",
+      mountingDepth: "O'rnatish chuqurligi",
+      glazingOptions: "Oynalash variantlari",
+      maxFillWeight: "Maks. to'ldirish og'irligi",
+    },
+    values: {
+      aluminium: "Alyuminiy",
+      aluminiumAdj: "Alyuminiy",
+      pvc: "PVX",
+      warm: "issiq",
+      cold: "sovuq",
+      lamination: "Laminatsiya",
+      anodisingRalLamination: "Anodlash, RAL ranglari, laminatsiya",
+      decorCapsClampProfile: "dekorativ qopqoqlar / qisuvchi profil",
+    },
+    units: { mm: "mm", kg: "kg" },
+  },
+  seo: {
+    title: "IMPERIYA — Oyna, eshik va vitrajlar fabrikasi",
+    description:
+      "IMPERIYA — premium darajadagi oyna, eshik va vitrajlar fabrikasi. Akfa rasmiy hamkori. Thermo va Engelberg profillari, energiya tejovchi shisha paketlar, kalit topshirish sharti bilan o'rnatish. Narxni onlayn hisoblang.",
+    profileTitle: "{{name}} profili",
+    profileDescription:
+      "{{name}} — {{category}}{{depth}}. Xususiyatlari, oynalash va kalit topshirish sharti bilan o'rnatish. IMPERIYA'da narxni onlayn hisoblang.",
+    profileDepth: ", o'rnatish chuqurligi {{value}}",
+    categoryFacade: "fasad tizimlari",
+    categoryPvc: "PVX profil",
+  },
 };
 
 export default uz;

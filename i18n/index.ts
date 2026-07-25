@@ -1,51 +1,39 @@
-import i18n from "i18next";
+import { createInstance, type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 import ru from "./locales/ru";
 import uz from "./locales/uz";
 import en from "./locales/en";
+import { DEFAULT_LANG, LANG_CODES, type LangCode } from "./config";
 
-export const LANGUAGES = [
-  { code: "ru", label: "RU" },
-  { code: "uz", label: "UZ" },
-  { code: "en", label: "EN" },
-] as const;
+export * from "./config";
 
-export type LangCode = (typeof LANGUAGES)[number]["code"];
+const resources = {
+  ru: { translation: ru },
+  uz: { translation: uz },
+  en: { translation: en },
+};
 
-// On the server we want a deterministic default language (RU). The detector
-// only runs in the browser, where it picks up localStorage / navigator.
-const isBrowser = typeof window !== "undefined";
+/**
+ * Builds a fresh i18next instance pinned to one language.
+ *
+ * The language comes from the URL segment, never from the browser: a
+ * detector would make `/uz` render Russian for a Russian-preferring
+ * visitor, and — worse for SEO — would make the server render a
+ * different language than the URL claims. One instance per language
+ * also keeps concurrent server renders from leaking one page's language
+ * into another, which a module-level singleton cannot guarantee.
+ */
+export function createI18n(lng: LangCode): I18nInstance {
+  const instance = createInstance();
 
-const chain = isBrowser
-  ? i18n.use(LanguageDetector).use(initReactI18next)
-  : i18n.use(initReactI18next);
-
-if (!i18n.isInitialized) {
-  void chain.init({
-    resources: {
-      ru: { translation: ru },
-      uz: { translation: uz },
-      en: { translation: en },
-    },
-    lng: isBrowser ? undefined : "ru",
-    fallbackLng: "ru",
-    supportedLngs: ["ru", "uz", "en"],
+  void instance.use(initReactI18next).init({
+    resources,
+    lng,
+    fallbackLng: DEFAULT_LANG,
+    supportedLngs: LANG_CODES as unknown as string[],
     interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "navigator", "htmlTag"],
-      caches: ["localStorage"],
-    },
     react: { useSuspense: false },
   });
-}
 
-if (isBrowser) {
-  const syncHtmlLang = (lng: string) => {
-    document.documentElement.lang = lng;
-  };
-  syncHtmlLang(i18n.resolvedLanguage ?? "ru");
-  i18n.on("languageChanged", syncHtmlLang);
+  return instance;
 }
-
-export default i18n;

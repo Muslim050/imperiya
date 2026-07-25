@@ -1,30 +1,40 @@
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_DESCRIPTION,
-  BUSINESS,
-} from "@/lib/site";
-import { SOCIALS } from "@/data/catalog";
+import { SITE_URL, SITE_NAME, BUSINESS, siteDescription } from "@/lib/site";
+import { localePath } from "@/lib/locale";
+import type { LangCode } from "@/i18n/config";
+import { SOCIALS, SERVICES } from "@/data/catalog";
+import ru from "@/i18n/locales/ru";
+import uz from "@/i18n/locales/uz";
+import en from "@/i18n/locales/en";
+
+const LOCALES = { ru, uz, en } as const;
 
 /**
- * Organization + LocalBusiness structured data (Schema.org / JSON-LD).
- * Improves local SEO and rich results (business name, phone, address,
- * opening hours) in Google Search and Maps. Rendered server-side so
- * crawlers see it in the initial HTML.
+ * Site-wide structured data (Schema.org / JSON-LD): the business itself
+ * plus a WebSite node. Rendered server-side so crawlers see it in the
+ * initial HTML.
+ *
+ * Emitted as one @graph rather than several <script> blocks so the nodes
+ * can reference each other by @id — Google then reads them as one entity
+ * described from several angles instead of unrelated fragments.
  */
-export function JsonLd() {
+export function JsonLd({ lang }: { lang: LangCode }) {
   const sameAs = SOCIALS.map((s) => s.href).filter((h) => h && h !== "#");
+  const home = `${SITE_URL}${localePath(lang, "/")}`;
+  const t = LOCALES[lang];
 
-  const data = {
-    "@context": "https://schema.org",
-    "@type": ["Organization", "LocalBusiness"],
+  const business = {
+    /* HomeAndConstructionBusiness is the closest concrete type Google
+     * recognises; a bare LocalBusiness says nothing about the trade. */
+    "@type": ["Organization", "HomeAndConstructionBusiness"],
+    // One @id across all three languages — the graph describes one company,
+    // not three.
     "@id": `${SITE_URL}/#business`,
     name: SITE_NAME,
     legalName: BUSINESS.legalName,
-    url: SITE_URL,
+    url: home,
     logo: `${SITE_URL}/icon.svg`,
     image: `${SITE_URL}/opengraph-image`,
-    description: SITE_DESCRIPTION,
+    description: siteDescription(lang),
     telephone: BUSINESS.phone,
     priceRange: "$$",
     address: {
@@ -33,6 +43,20 @@ export function JsonLd() {
       addressLocality: BUSINESS.address.locality,
       addressRegion: BUSINESS.address.region,
       addressCountry: BUSINESS.address.country,
+    },
+    areaServed: BUSINESS.areaServed.map((name) => ({
+      "@type": "AdministrativeArea",
+      name,
+    })),
+    /* The services block, so the business entity carries what it sells
+     * rather than leaving Google to infer it from page copy. */
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: t.services.title,
+      itemListElement: SERVICES.map((s) => ({
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: t.services.items[s] },
+      })),
     },
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
@@ -51,11 +75,26 @@ export function JsonLd() {
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
 
+  const website = {
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    url: home,
+    name: SITE_NAME,
+    description: siteDescription(lang),
+    inLanguage: lang,
+    publisher: { "@id": `${SITE_URL}/#business` },
+  };
+
   return (
     <script
       type="application/ld+json"
       // JSON.stringify output is safe to inline; no user input involved.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [business, website],
+        }),
+      }}
     />
   );
 }

@@ -242,6 +242,47 @@ const ru = {
     title: "Страница не найдена",
     home: "На главную",
   },
+  /* Profile spec table. `data/catalog.ts` stores keys, not prose, so the
+   * table reads in the visitor's language instead of always Russian. */
+  specs: {
+    labels: {
+      profileType: "Тип профиля",
+      series: "Серия",
+      wallThickness: "Толщина стенки",
+      chambers: "Количество камер",
+      maxSashHeight: "Макс. высота створки",
+      maxSashWidth: "Макс. ширина створки",
+      glassThickness: "Толщина стеклопакета",
+      coating: "Покрытие",
+      mountingDepth: "Монтажная глубина",
+      glazingOptions: "Варианты остекления",
+      maxFillWeight: "Макс. вес заполнения",
+    },
+    values: {
+      aluminium: "Алюминий",
+      aluminiumAdj: "Алюминиевый",
+      pvc: "ПВХ",
+      warm: "тёплая",
+      cold: "холодная",
+      lamination: "Ламинация",
+      anodisingRalLamination: "Анодирование, цвета RAL, ламинация",
+      decorCapsClampProfile: "декоративные крышки / прижимной профиль",
+    },
+    units: { mm: "мм", kg: "кг" },
+  },
+  /* Drives <title> and <meta name="description"> per language. Kept here
+   * rather than in lib/site.ts so all three stay side by side. */
+  seo: {
+    title: "IMPERIYA — Фабрика окон, дверей и витражей",
+    description:
+      "IMPERIYA — фабрика окон, дверей и витражей премиум-класса. Официальный партнёр Akfa. Профили Thermo и Engelberg, энергосберегающие стеклопакеты, монтаж под ключ. Расчёт стоимости онлайн.",
+    profileTitle: "Профиль {{name}}",
+    profileDescription:
+      "{{name}} — {{category}}{{depth}}. Характеристики, остекление и монтаж под ключ. Расчёт стоимости онлайн в IMPERIYA.",
+    profileDepth: ", монтажная глубина {{value}}",
+    categoryFacade: "фасадные системы",
+    categoryPvc: "ПВХ-профиль",
+  },
 } as const;
 
 export default ru;

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
 import { cn } from "@/lib/utils";
 import { WindowMark } from "@/components/ui/icons";
 
@@ -20,11 +22,12 @@ export function Logo({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
+  const href = useLocalePath();
   const light = tone === "light";
 
   return (
     <Link
-      href="/"
+      href={href("/")}
       aria-label="IMPERIYA"
       className={cn("flex items-center gap-3", className)}
     >
@@ -63,12 +66,15 @@ export function Logo({
             )}
           >
             {t("brand.partner")}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/partners/akfa.png"
               alt="Akfa"
-              loading="lazy"
-              decoding="async"
+              width={400}
+              height={110}
+              /* Fixed 25px tall, so ~91px wide. Without `sizes` Next bases
+                 the srcset on the intrinsic 400px and the browser pulls an
+                 828px file for a 91px slot. */
+              sizes="91px"
               className="h-[25px] w-auto object-contain"
             />
           </span>

@@ -8,10 +8,45 @@
 
 export type ProfileCategory = "pvc" | "facade";
 
+/** Row label — resolved through `specs.labels.*` in the locale files. */
+export type SpecKey =
+  | "profileType"
+  | "series"
+  | "wallThickness"
+  | "chambers"
+  | "maxSashHeight"
+  | "maxSashWidth"
+  | "glassThickness"
+  | "coating"
+  | "mountingDepth"
+  | "glazingOptions"
+  | "maxFillWeight";
+
+/** Enumerated cell value — resolved through `specs.values.*`. */
+export type SpecTerm =
+  | "aluminium"
+  | "aluminiumAdj"
+  | "pvc"
+  | "warm"
+  | "cold"
+  | "lamination"
+  | "anodisingRalLamination"
+  | "decorCapsClampProfile";
+
+/**
+ * Cell contents. Measurements keep the number as data and name the unit
+ * separately so "70 мм" can render as "70 mm" without string surgery;
+ * `plain` is for bare counts that read the same in every language.
+ */
+export type SpecValue =
+  | { measure: string; unit: "mm" | "kg" }
+  | { term: SpecTerm }
+  | { plain: string };
+
 /** One row in the spec table on the detail page. */
 export interface ProfileSpec {
-  label: string;
-  value: string;
+  key: SpecKey;
+  value: SpecValue;
 }
 
 export interface ProfileSeries {
@@ -20,7 +55,7 @@ export interface ProfileSeries {
   category: ProfileCategory;
   /** Photo / cross-section under public/profiles/{slug}.png. */
   image?: string;
-  /** Russian-language tech specs straight from the client's doc. */
+  /** Tech specs from the client's doc, keyed so they can be translated. */
   specs?: ProfileSpec[];
 }
 
@@ -34,15 +69,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/thermo-70.png",
     specs: [
-      { label: "Тип профиля", value: "Алюминий" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "1,4–1,9 мм" },
-      { label: "Количество камер", value: "3" },
-      { label: "Макс. высота створки", value: "2600 мм" },
-      { label: "Макс. ширина створки", value: "1200 мм" },
-      { label: "Толщина стеклопакета", value: "20–36 мм" },
-      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
-      { label: "Монтажная глубина", value: "70 мм" },
+      { key: "profileType", value: { term: "aluminium" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "wallThickness", value: { measure: "1,4–1,9", unit: "mm" } },
+      { key: "chambers", value: { plain: "3" } },
+      { key: "maxSashHeight", value: { measure: "2600", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "1200", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "20–36", unit: "mm" } },
+      { key: "coating", value: { term: "anodisingRalLamination" } },
+      { key: "mountingDepth", value: { measure: "70", unit: "mm" } },
     ],
   },
   {
@@ -51,15 +86,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/thermo-58.png",
     specs: [
-      { label: "Тип профиля", value: "Алюминий" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "1,4 мм" },
-      { label: "Количество камер", value: "3" },
-      { label: "Макс. высота створки", value: "2400 мм" },
-      { label: "Макс. ширина створки", value: "1000 мм" },
-      { label: "Толщина стеклопакета", value: "6–32 мм" },
-      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
-      { label: "Монтажная глубина", value: "58 мм" },
+      { key: "profileType", value: { term: "aluminium" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "wallThickness", value: { measure: "1,4", unit: "mm" } },
+      { key: "chambers", value: { plain: "3" } },
+      { key: "maxSashHeight", value: { measure: "2400", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "1000", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "6–32", unit: "mm" } },
+      { key: "coating", value: { term: "anodisingRalLamination" } },
+      { key: "mountingDepth", value: { measure: "58", unit: "mm" } },
     ],
   },
   {
@@ -68,15 +103,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/engelberg-7000.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "2,8 мм" },
-      { label: "Количество камер", value: "5" },
-      { label: "Макс. высота створки", value: "2200 мм" },
-      { label: "Макс. ширина створки", value: "900 мм" },
-      { label: "Толщина стеклопакета", value: "24–32 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "70 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "wallThickness", value: { measure: "2,8", unit: "mm" } },
+      { key: "chambers", value: { plain: "5" } },
+      { key: "maxSashHeight", value: { measure: "2200", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "900", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "24–32", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "70", unit: "mm" } },
     ],
   },
   {
@@ -85,15 +120,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/engelberg-8000.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "2,8 мм" },
-      { label: "Количество камер", value: "6" },
-      { label: "Макс. высота створки", value: "2300 мм" },
-      { label: "Макс. ширина створки", value: "1000 мм" },
-      { label: "Толщина стеклопакета", value: "24–32 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "80 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "wallThickness", value: { measure: "2,8", unit: "mm" } },
+      { key: "chambers", value: { plain: "6" } },
+      { key: "maxSashHeight", value: { measure: "2300", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "1000", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "24–32", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "80", unit: "mm" } },
     ],
   },
   {
@@ -102,15 +137,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/quatro-6000.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Количество камер", value: "4" },
-      { label: "Толщина стенки", value: "2,2 мм" },
-      { label: "Толщина стеклопакета", value: "4–24 мм" },
-      { label: "Макс. высота створки", value: "1500 мм" },
-      { label: "Макс. ширина створки", value: "650 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "60 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "chambers", value: { plain: "4" } },
+      { key: "wallThickness", value: { measure: "2,2", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "4–24", unit: "mm" } },
+      { key: "maxSashHeight", value: { measure: "1500", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "650", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "60", unit: "mm" } },
     ],
   },
   {
@@ -119,15 +154,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/trio-6000.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Количество камер", value: "3" },
-      { label: "Толщина стенки", value: "2,8 мм" },
-      { label: "Толщина стеклопакета", value: "4–24 мм" },
-      { label: "Макс. высота створки", value: "1600 мм" },
-      { label: "Макс. ширина створки", value: "650 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "60 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "chambers", value: { plain: "3" } },
+      { key: "wallThickness", value: { measure: "2,8", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "4–24", unit: "mm" } },
+      { key: "maxSashHeight", value: { measure: "1600", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "650", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "60", unit: "mm" } },
     ],
   },
   {
@@ -136,15 +171,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/penta-6500.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Количество камер", value: "5" },
-      { label: "Толщина стенки", value: "2,4 мм" },
-      { label: "Толщина стеклопакета", value: "24–32 мм" },
-      { label: "Макс. высота створки", value: "1600 мм" },
-      { label: "Макс. ширина створки", value: "650 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "65 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "chambers", value: { plain: "5" } },
+      { key: "wallThickness", value: { measure: "2,4", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "24–32", unit: "mm" } },
+      { key: "maxSashHeight", value: { measure: "1600", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "650", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "65", unit: "mm" } },
     ],
   },
   {
@@ -153,15 +188,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/akfa-7000.png",
     specs: [
-      { label: "Тип профиля", value: "ПВХ" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Количество камер", value: "5" },
-      { label: "Толщина стенки", value: "2,7 мм" },
-      { label: "Толщина стеклопакета", value: "24–32 мм" },
-      { label: "Макс. высота створки", value: "1700 мм" },
-      { label: "Макс. ширина створки", value: "700 мм" },
-      { label: "Покрытие", value: "Ламинация" },
-      { label: "Монтажная глубина", value: "70 мм" },
+      { key: "profileType", value: { term: "pvc" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "chambers", value: { plain: "5" } },
+      { key: "wallThickness", value: { measure: "2,7", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "24–32", unit: "mm" } },
+      { key: "maxSashHeight", value: { measure: "1700", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "700", unit: "mm" } },
+      { key: "coating", value: { term: "lamination" } },
+      { key: "mountingDepth", value: { measure: "70", unit: "mm" } },
     ],
   },
   {
@@ -170,14 +205,14 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/aldoks.png",
     specs: [
-      { label: "Тип профиля", value: "Алюминиевый" },
-      { label: "Серия", value: "холодная" },
-      { label: "Толщина стенки", value: "1 мм" },
-      { label: "Макс. высота створки", value: "2400 мм" },
-      { label: "Макс. ширина створки", value: "900 мм" },
-      { label: "Толщина стеклопакета", value: "4–24 мм" },
-      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
-      { label: "Монтажная глубина", value: "47 мм" },
+      { key: "profileType", value: { term: "aluminiumAdj" } },
+      { key: "series", value: { term: "cold" } },
+      { key: "wallThickness", value: { measure: "1", unit: "mm" } },
+      { key: "maxSashHeight", value: { measure: "2400", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "900", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "4–24", unit: "mm" } },
+      { key: "coating", value: { term: "anodisingRalLamination" } },
+      { key: "mountingDepth", value: { measure: "47", unit: "mm" } },
     ],
   },
   {
@@ -189,15 +224,15 @@ export const PROFILE_SERIES: ProfileSeries[] = [
     category: "pvc",
     image: "/profiles/bcf-48.png",
     specs: [
-      { label: "Тип профиля", value: "Алюминиевый" },
-      { label: "Серия", value: "тёплая" },
-      { label: "Толщина стенки", value: "1,5 / 2 / 3 мм" },
-      { label: "Покрытие", value: "Анодирование, цвета RAL, ламинация" },
-      { label: "Варианты остекления", value: "декоративные крышки / прижимной профиль" },
-      { label: "Макс. высота створки", value: "2400 мм" },
-      { label: "Макс. ширина створки", value: "900 мм" },
-      { label: "Толщина стеклопакета", value: "6–32 мм" },
-      { label: "Макс. вес заполнения", value: "120 кг" },
+      { key: "profileType", value: { term: "aluminiumAdj" } },
+      { key: "series", value: { term: "warm" } },
+      { key: "wallThickness", value: { measure: "1,5 / 2 / 3", unit: "mm" } },
+      { key: "coating", value: { term: "anodisingRalLamination" } },
+      { key: "glazingOptions", value: { term: "decorCapsClampProfile" } },
+      { key: "maxSashHeight", value: { measure: "2400", unit: "mm" } },
+      { key: "maxSashWidth", value: { measure: "900", unit: "mm" } },
+      { key: "glassThickness", value: { measure: "6–32", unit: "mm" } },
+      { key: "maxFillWeight", value: { measure: "120", unit: "kg" } },
     ],
   },
 ];
@@ -259,14 +294,18 @@ export const PARTNERS: Partner[] = [
 export interface Certificate {
   id: string;
   img: string;
+  /** Intrinsic pixel size — next/image needs it for the lightbox, which
+   *  sizes by height and so has no box to fill. */
+  w: number;
+  h: number;
   titleKey: string;
 }
 
 export const CERTIFICATES: Certificate[] = [
-  { id: "iso", img: "/certificates/national-1.jpg", titleKey: "iso" },
-  { id: "gost-32603", img: "/certificates/national-2.jpg", titleKey: "gost32603" },
-  { id: "gost-30245", img: "/certificates/national-3.jpg", titleKey: "gost30245" },
-  { id: "gost-23486", img: "/certificates/inter-1.jpg", titleKey: "gost23486" },
+  { id: "iso", img: "/certificates/national-1.jpg", w: 777, h: 1100, titleKey: "iso" },
+  { id: "gost-32603", img: "/certificates/national-2.jpg", w: 778, h: 1100, titleKey: "gost32603" },
+  { id: "gost-30245", img: "/certificates/national-3.jpg", w: 778, h: 1100, titleKey: "gost30245" },
+  { id: "gost-23486", img: "/certificates/inter-1.jpg", w: 777, h: 1100, titleKey: "gost23486" },
 ];
 
 /** New "Imperiya in numbers" block per the TZ. */

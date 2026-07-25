@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import { useLocalePath } from "@/lib/useLocalePath";
+import { useLang } from "@/components/I18nProvider";
+import { formatSpecValue } from "@/lib/specs";
 import { getProfileBySlug } from "@/data/catalog";
 import { WindowMark, ChevronLeft } from "@/components/ui/icons";
 import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
@@ -14,6 +18,8 @@ import { scrollToAnchor, isOnHome } from "@/lib/scrollToAnchor";
  */
 export function ProfileDetailClient({ slug }: { slug: string }) {
   const { t } = useTranslation();
+  const href = useLocalePath();
+  const lang = useLang();
   const profile = getProfileBySlug(slug);
 
   if (!profile) {
@@ -24,7 +30,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
             {t("notFound.title")}
           </h1>
           <Link
-            href="/#profiles"
+            href={href("/#profiles")}
             className="mt-6 inline-flex rounded-md bg-orange px-6 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_8px_20px_-16px_rgba(15,15,15,.38)] hover:bg-orange-d"
           >
             {t("notFound.home")}
@@ -38,7 +44,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
     <div className="bg-bg py-12">
       <div className="inner">
         <Link
-          href="/#profiles"
+          href={href("/#profiles")}
           className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-orange"
         >
           <ChevronLeft className="size-4" />
@@ -53,13 +59,13 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
             }}
           >
             {profile.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={profile.image}
-                alt={profile.name}
-                loading="eager"
-                decoding="async"
-                className="size-full object-contain p-8"
+                alt={`${t("profiles.title")} ${profile.name}`}
+                fill
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-contain p-8"
               />
             ) : (
               <WindowMark className="size-24 text-white/15" />
@@ -80,12 +86,12 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
               <dl className="mt-6 divide-y divide-[#E6E6E6] border-y border-[#E6E6E6]">
                 {profile.specs.map((s) => (
                   <div
-                    key={s.label}
+                    key={s.key}
                     className="flex items-baseline justify-between gap-4 py-2.5 text-[13px]"
                   >
-                    <dt className="text-[#666]">{s.label}</dt>
+                    <dt className="text-[#666]">{t(`specs.labels.${s.key}`)}</dt>
                     <dd className="m-0 text-right font-semibold text-ink-2">
-                      {s.value}
+                      {formatSpecValue(s.value, t, lang)}
                     </dd>
                   </div>
                 ))}
@@ -97,7 +103,7 @@ export function ProfileDetailClient({ slug }: { slug: string }) {
             )}
 
             <Link
-              href="/#calculator"
+              href={href("/#calculator")}
               onClick={(e) => {
                 if (isOnHome()) {
                   e.preventDefault();

@@ -1,4 +1,11 @@
 import { CONTACTS } from "@/data/catalog";
+import { DEFAULT_LANG, LANG_CODES, type LangCode } from "@/i18n/config";
+import { localePath } from "@/lib/locale";
+import ru from "@/i18n/locales/ru";
+import uz from "@/i18n/locales/uz";
+import en from "@/i18n/locales/en";
+
+const LOCALES = { ru, uz, en } as const;
 
 /** The one canonical origin. Never derive this from a request header. */
 const PRODUCTION_URL = "https://www.imperiya.uz";
@@ -38,23 +45,70 @@ function resolveSiteUrl(): string {
 export const SITE_URL = resolveSiteUrl();
 
 export const SITE_NAME = "IMPERIYA";
-export const SITE_TITLE = "IMPERIYA — Фабрика окон, дверей и витражей";
-export const SITE_DESCRIPTION =
-  "IMPERIYA — фабрика окон, дверей и витражей премиум-класса. Официальный партнёр Akfa. Профили Thermo и Engelberg, энергосберегающие стеклопакеты, монтаж под ключ. Расчёт стоимости онлайн.";
 
-export const SITE_KEYWORDS = [
-  "окна",
-  "пластиковые окна",
-  "фабрика окон",
-  "витражи",
-  "двери",
-  "стеклопакеты",
-  "Akfa",
-  "алюминиевые профили",
-  "остекление",
-  "Ташкент",
-  "Узбекистан",
-];
+/** Localised <title> / <meta description>, sourced from the locale files. */
+export const siteTitle = (lang: LangCode) => LOCALES[lang].seo.title;
+export const siteDescription = (lang: LangCode) =>
+  LOCALES[lang].seo.description;
+
+/** Russian copy is still the default for anything language-agnostic. */
+export const SITE_TITLE = siteTitle(DEFAULT_LANG);
+export const SITE_DESCRIPTION = siteDescription(DEFAULT_LANG);
+
+export const SITE_KEYWORDS: Record<LangCode, string[]> = {
+  ru: [
+    "окна",
+    "пластиковые окна",
+    "фабрика окон",
+    "витражи",
+    "двери",
+    "стеклопакеты",
+    "Akfa",
+    "алюминиевые профили",
+    "остекление",
+    "Ташкент",
+    "Узбекистан",
+  ],
+  uz: [
+    "oyna",
+    "plastik oynalar",
+    "oyna fabrikasi",
+    "vitrajlar",
+    "eshiklar",
+    "shisha paketlar",
+    "Akfa",
+    "alyumin profillar",
+    "oynalash",
+    "Toshkent",
+    "O'zbekiston",
+  ],
+  en: [
+    "windows",
+    "pvc windows",
+    "window factory",
+    "facade glazing",
+    "doors",
+    "glass units",
+    "Akfa",
+    "aluminium profiles",
+    "glazing",
+    "Tashkent",
+    "Uzbekistan",
+  ],
+};
+
+/**
+ * hreflang set for a path that exists in every language. `path` is the
+ * language-independent tail ("/" or "/profile/thermo-70"). x-default
+ * points at Russian, which is also where a bare "/" redirects.
+ */
+export function languageAlternates(path: string) {
+  const languages = Object.fromEntries(
+    LANG_CODES.map((code) => [code, localePath(code, path)]),
+  ) as Record<LangCode, string>;
+
+  return { ...languages, "x-default": localePath(DEFAULT_LANG, path) };
+}
 
 /** Business identity for LocalBusiness structured data. */
 export const BUSINESS = {
@@ -68,5 +122,8 @@ export const BUSINESS = {
     region: "Ташкентская область",
     country: "UZ",
   },
+  /* Where the factory actually sells and installs. Feeds `areaServed`,
+   * which is what ties the business to local-intent queries. */
+  areaServed: ["Ташкент", "Ташкентская область", "Узбекистан"],
   hours: { opens: "09:00", closes: "20:00" },
 } as const;
