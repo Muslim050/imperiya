@@ -7,6 +7,7 @@ import { cn, formatPrice } from "@/lib/utils";
 import { scrollToAnchor } from "@/lib/scrollToAnchor";
 import { WindowPreview } from "./WindowPreview";
 import { FRAME_PICTO } from "./shapes";
+import { CONTACTS } from "@/data/catalog";
 import {
   PRODUCTS,
   COMPONENTS,
@@ -47,17 +48,6 @@ type CalculatorDraft = {
   state: CalcState;
   step: number;
 };
-
-function createRequestNumber() {
-  const now = new Date();
-  const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
-    .map((part, index) => index === 0 ? String(part) : String(part).padStart(2, "0"))
-    .join("");
-  const suffix = typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID().slice(0, 4).toUpperCase()
-    : Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `IMP-${date}-${suffix}`;
-}
 
 function SelectedCheck({ on }: { on: boolean }) {
   if (!on) return null;
@@ -152,11 +142,12 @@ export function Calculator() {
   const [submitting, setSubmitting] = useState(false);
   const [requestNumber, setRequestNumber] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [step, setStep] = useState(1);
   const feedbackTimerRef = useRef<number | null>(null);
-  const submitTimerRef = useRef<number | null>(null);
+  const submitAbortRef = useRef<AbortController | null>(null);
   const successRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -199,9 +190,7 @@ export function Calculator() {
     if (feedbackTimerRef.current !== null) {
       window.clearTimeout(feedbackTimerRef.current);
     }
-    if (submitTimerRef.current !== null) {
-      window.clearTimeout(submitTimerRef.current);
-    }
+    submitAbortRef.current?.abort();
   }, []);
 
   const wizardSteps = [
@@ -385,7 +374,12 @@ export function Calculator() {
     goToStep(step + 1);
   }
 
-  function submit() {
+  /**
+   * Sends the whole cart + contacts to /api/order, which forwards the lead to
+   * the managers' Telegram chat. The draft is dropped only once the server
+   * confirms delivery, so a network hiccup never wipes a filled-in form.
+   */
+  async function submit() {
     if (submitting) return;
     const errors: ValidationErrors = {};
     if (state.name.trim().length < 2) errors.name = t("calc.validation.name");
@@ -400,18 +394,49 @@ export function Calculator() {
       focusFirstError(first);
       return;
     }
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
+    setSubmitError(null);
     setSubmitting(true);
-    submitTimerRef.current = window.setTimeout(() => {
-      setRequestNumber(createRequestNumber());
+
+    try {
+      const response = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: state.items,
+          name: state.name,
+          phone: state.phone,
+          email: state.email,
+          address: state.address,
+          comment: state.comment,
+          lang,
+        }),
+        signal: controller.signal,
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; requestNumber?: string }
+        | null;
+
+      if (!response.ok || !payload?.ok || !payload.requestNumber) {
+        throw new Error(`Order request failed: ${response.status}`);
+      }
+
+      setRequestNumber(payload.requestNumber);
       setSubmitted(true);
-      setSubmitting(false);
-      submitTimerRef.current = null;
       window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       requestAnimationFrame(() => {
         scrollToAnchor("calculator");
         successRef.current?.focus({ preventScroll: true });
       });
-    }, 900);
+    } catch (error) {
+      if (controller.signal.aborted) return; // unmounted mid-request
+      console.error(error);
+      setSubmitError(t("calc.sendError", { phone: CONTACTS.phone }));
+    } finally {
+      if (!controller.signal.aborted) setSubmitting(false);
+      submitAbortRef.current = null;
+    }
   }
 
   function resetCalculator() {
@@ -424,6 +449,7 @@ export function Calculator() {
     setSubmitted(false);
     setSubmitting(false);
     setRequestNumber("");
+    setSubmitError(null);
     setValidationErrors({});
     window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     requestAnimationFrame(() => scrollToAnchor("calculator"));
@@ -1059,6 +1085,14 @@ export function Calculator() {
                       />
                     </label>
                     <div className="mt-5 border-t border-[#ECECEC] pt-5">
+                      {submitError && (
+                        <p
+                          role="alert"
+                          className="mb-3 rounded-md border border-orange/40 bg-[#FFF3E6] px-4 py-3 text-[13px] font-semibold leading-relaxed text-[#8a4b00]"
+                        >
+                          {submitError}
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={submit}

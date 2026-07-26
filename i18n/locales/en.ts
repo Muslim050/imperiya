@@ -117,6 +117,8 @@ const en: Translation = {
     submit: "Submit request",
     sending: "Submitting request…",
     success: "Thank you! We will contact you shortly.",
+    sendError:
+      "Could not submit the request. Check your connection and try again, or call us: {{phone}}",
     requestNumber: "Request number",
     successTime: "A manager will contact you within 24 hours.",
     newCalculation: "New calculation",

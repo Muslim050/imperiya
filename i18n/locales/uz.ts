@@ -117,6 +117,8 @@ const uz: Translation = {
     submit: "Ariza yuborish",
     sending: "Ariza yuborilmoqda…",
     success: "Rahmat! Tez orada siz bilan bog‘lanamiz.",
+    sendError:
+      "Arizani yuborib bo‘lmadi. Aloqani tekshirib, qayta urinib ko‘ring yoki bizga qo‘ng‘iroq qiling: {{phone}}",
     requestNumber: "Ariza raqami",
     successTime: "Menejer 24 soat ichida siz bilan bog‘lanadi.",
     newCalculation: "Yangi hisob",
